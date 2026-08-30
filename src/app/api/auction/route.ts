@@ -34,8 +34,10 @@ export async function POST(
       predictions,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Auction prediction failed";
     console.error("[POST /api/auction]", err);
-    return NextResponse.json({ error: "Auction failed", message }, { status: 500 });
+    return NextResponse.json(
+      { error: "An error occurred during auction prediction calculation." },
+      { status: 500 },
+    );
   }
 }

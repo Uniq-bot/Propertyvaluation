@@ -1,6 +1,6 @@
 # Nepal Property Valuation System 🇳🇵
 
-A modern, production-grade web application for real estate property valuation in Nepal (Bagmati Province). Built with **Next.js 16 (App Router)**, **TypeScript**, **Prisma 7 (PostgreSQL)**, **NextAuth v5 (Auth.js)**, **Tailwind CSS v4**, and **Chart.js**.
+A modern, production-grade web application for real estate property valuation in Nepal (Bagmati Province). Built with **Next.js 16 (App Router)**, **TypeScript**, **Prisma 7 (PostgreSQL)**, **Tailwind CSS v4**, **jose (Native JWT)**, and **Chart.js**.
 
 ---
 
@@ -10,7 +10,7 @@ A modern, production-grade web application for real estate property valuation in
 - **Building Cost & Depreciation Approach**: Calculates total civil cost per floor, adds sanitary (10%) and electrical (8%) overheads, and applies straight-line depreciation over the building's useful life.
 - **10-Year Inflation Forecasting**: Dynamic financial projection visualization for property values over a 10-year horizon.
 - **Distress Sale / Auction Analysis**: Assesses collateral liquid values for bank valuations and auction scenarios (Conservative 60%, Expected 70%, Optimistic 80%).
-- **Authentication**: Secure Google OAuth integration powered by Auth.js (NextAuth v5) and Prisma user record synchronization.
+- **Native Manual Authentication**: Secure, lightweight HTTP-only JWT authentication using `jose` and `bcryptjs` with PostgreSQL database persistence.
 
 ---
 
@@ -22,30 +22,13 @@ Create a `.env.local` or `.env` file in the project root (see [.env.example](fil
 # PostgreSQL Database URL (Neon DB, Supabase, AWS RDS, or local Postgres)
 DATABASE_URL="postgresql://<user>:<password>@<host>:<port>/<database>?sslmode=require"
 
-# NextAuth v5 Secret Key (generate using: `openssl rand -base64 32`)
+# Session JWT Secret Key (generate using: `openssl rand -base64 32`)
 AUTH_SECRET="your-32-character-random-secret-here"
-
-# Google OAuth Credentials (Google Cloud Console)
-GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-
-# App Canonical Base URL
-NEXTAUTH_URL="http://localhost:3000"
 ```
-
-### How to obtain credentials:
-1. **Google OAuth Client ID & Secret**:
-   - Go to [Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials).
-   - Create an **OAuth 2.0 Client ID** (Web application).
-   - Add Authorised Redirect URIs:
-     - Development: `http://localhost:3000/api/auth/callback/google`
-     - Production: `https://your-domain.com/api/auth/callback/google`
-2. **Database URL**:
-   - Create a PostgreSQL database instance on [Neon](https://neon.tech), [Supabase](https://supabase.com), or AWS RDS and paste the connection string into `DATABASE_URL`.
 
 ---
 
-## 🛠️ Database Setup & Migrations
+## 🛠️ Database Setup & Seeding
 
 1. **Generate Prisma Client**:
    ```bash
@@ -55,7 +38,14 @@ NEXTAUTH_URL="http://localhost:3000"
    ```bash
    npx prisma db push
    ```
-   *(Or run migrations using `npx prisma migrate dev --name init`)*
+3. **Seed Database (Admin Account)**:
+   ```bash
+   npm run db:seed
+   ```
+
+### 🔑 Seeded Administrator Account Credentials
+- **Email**: `admin@valuation.gov.np`
+- **Password**: `admin123`
 
 ---
 
@@ -109,9 +99,6 @@ docker build -t nepal-valuation .
 docker run -p 3000:3000 \
   -e DATABASE_URL="your-database-url" \
   -e AUTH_SECRET="your-auth-secret" \
-  -e GOOGLE_CLIENT_ID="your-google-client-id" \
-  -e GOOGLE_CLIENT_SECRET="your-google-client-secret" \
-  -e NEXTAUTH_URL="http://localhost:3000" \
   nepal-valuation
 ```
 
@@ -119,7 +106,6 @@ docker run -p 3000:3000 \
 
 ## 🌐 Deploying to Vercel / Cloud Services
 
-### Vercel Deployment
 1. Import the repository into [Vercel](https://vercel.com).
-2. Configure Environment Variables (`DATABASE_URL`, `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_URL`).
+2. Configure Environment Variables (`DATABASE_URL`, `AUTH_SECRET`).
 3. Set the build command to `npm run build` (Prisma generation is executed automatically via the `postinstall` script).

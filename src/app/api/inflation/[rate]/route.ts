@@ -47,8 +47,10 @@ export async function POST(
       years,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Inflation projection failed";
     console.error("[POST /api/inflation/[rate]]", err);
-    return NextResponse.json({ error: "Projection failed", message }, { status: 500 });
+    return NextResponse.json(
+      { error: "An error occurred during inflation projection calculation." },
+      { status: 500 },
+    );
   }
 }

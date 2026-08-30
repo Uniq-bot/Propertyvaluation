@@ -25,8 +25,10 @@ export async function POST(
     const result = valuateProperty(body);
     return NextResponse.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Valuation failed";
     console.error("[POST /api/valuation]", err);
-    return NextResponse.json({ error: "Valuation failed", message }, { status: 500 });
+    return NextResponse.json(
+      { error: "An error occurred during property valuation processing." },
+      { status: 500 },
+    );
   }
 }

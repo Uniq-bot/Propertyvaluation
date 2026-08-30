@@ -142,10 +142,7 @@ export interface AuctionResponse {
   predictions: AuctionPrediction[];
 }
 
-// ── NextAuth session extension ───────────────
-// Augment the built-in Session type so session.user carries our DB fields.
-// The actual augmentation lives in src/auth.ts — this is just for convenience.
-
+// ── User session type ──────────────────────
 export interface AppUser {
   id: string;
   name?: string | null;
