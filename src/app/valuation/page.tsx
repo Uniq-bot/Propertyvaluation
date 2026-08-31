@@ -18,6 +18,7 @@ import {
 import { formatNPR, formatNumber, formatPercent } from "@/lib/functions";
 import InflationChart from "@/components/Chart";
 import { BAGMATI_PROVINCE_DATA } from "@/data/bagmatiData";
+import { ValuationReportModal } from "@/components/ValuationReportModal";
 import type {
   ValuationResult,
   ApiError,
@@ -156,6 +157,7 @@ export default function PropertyValuationPage() {
   const [step, setStep]                     = useState<StepIndex>(0);
   const [furthestUnlocked, setFurthestUnlocked] = useState<StepIndex>(0);
   const [formOpen, setFormOpen]             = useState(true);
+  const [isReportOpen, setIsReportOpen]     = useState(false);
 
   // Derived selects
   const selectedDistrictInfo = BAGMATI_PROVINCE_DATA.find(
@@ -505,7 +507,7 @@ export default function PropertyValuationPage() {
                         Government rate, per aana
                       </p>
                     </div>
-                    <WeightValue value={0.4} />
+                    <WeightValue value={0.3} />
                   </div>
 
                   <div
@@ -522,7 +524,7 @@ export default function PropertyValuationPage() {
                         Market rate, per aana
                       </p>
                     </div>
-                    <WeightValue value={0.6} />
+                    <WeightValue value={0.7} />
                   </div>
                 </div>
 
@@ -835,18 +837,31 @@ export default function PropertyValuationPage() {
                   border
                 />
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    `/auction-analysis?amount=${result.finalValue}&id=${encodeURIComponent(result.propertyId)}`,
-                  )
-                }
-                className="bg-gold-gradient mt-6 rounded px-5 py-2.5 text-sm font-bold transition hover:opacity-90"
-                style={{ color: NAVY }}
-              >
-                See what it might fetch at auction →
-              </button>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsReportOpen(true)}
+                  className="bg-gold-gradient rounded-lg px-6 py-2.5 text-sm font-bold shadow transition hover:opacity-90 flex items-center gap-2"
+                  style={{ color: NAVY }}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Generate & Print Full Report
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/auction-analysis?amount=${result.finalValue}&id=${encodeURIComponent(result.propertyId)}`,
+                    )
+                  }
+                  className="rounded-lg border px-5 py-2.5 text-sm font-bold transition hover:bg-[#f7f3ea]"
+                  style={{ borderColor: BORDER, color: NAVY }}
+                >
+                  See auction estimate →
+                </button>
+              </div>
             </div>
 
             {/* Full calculation sheet */}
@@ -1051,6 +1066,15 @@ export default function PropertyValuationPage() {
           </div>
         )}
       </div>
+
+      {result && (
+        <ValuationReportModal
+          isOpen={isReportOpen}
+          onClose={() => setIsReportOpen(false)}
+          property={property}
+          result={result}
+        />
+      )}
     </main>
   );
 }

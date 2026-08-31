@@ -2,8 +2,8 @@ import prisma from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
 
 async function main() {
-  const email = "admin@valuation.gov.np";
-  const rawPassword = "admin123";
+  const email = "super@admin.ekpratishat.com";
+  const rawPassword = "valuator@212";
   const name = "Valuation Administrator";
 
   console.log("🌱 Seeding database...");

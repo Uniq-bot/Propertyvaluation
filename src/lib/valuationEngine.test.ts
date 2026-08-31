@@ -19,12 +19,12 @@ describe("Valuation Engine Unit Tests", () => {
     marketRate: 2_000_000,
   };
 
-  it("calculates land valuation using 40% government and 60% market weights", () => {
+  it("calculates land valuation using 30% government and 70% market weights", () => {
     const result = calculateLandValue(sampleLandProperty);
-    // Weighted rate: (1,000,000 * 0.4) + (2,000,000 * 0.6) = 400,000 + 1,200,000 = 1,600,000
-    assert.equal(result.weightedRate, 1_600_000);
-    assert.equal(result.adoptedRate, 1_600_000);
-    assert.equal(result.landValue, 16_000_000);
+    // Weighted rate: (1,000,000 * 0.3) + (2,000,000 * 0.7) = 300,000 + 1,400,000 = 1,700,000
+    assert.equal(result.weightedRate, 1_700_000);
+    assert.equal(result.adoptedRate, 1_700_000);
+    assert.equal(result.landValue, 17_000_000);
   });
 
   it("respects adopted land rate override if specified", () => {
@@ -33,7 +33,7 @@ describe("Valuation Engine Unit Tests", () => {
       adoptedLandRate: 1_500_000,
     };
     const result = calculateLandValue(propertyWithAdoptedRate);
-    assert.equal(result.weightedRate, 1_600_000);
+    assert.equal(result.weightedRate, 1_700_000);
     assert.equal(result.adoptedRate, 1_500_000);
     assert.equal(result.landValue, 15_000_000);
   });
@@ -96,7 +96,7 @@ describe("Valuation Engine Unit Tests", () => {
 
     const result = valuateProperty(fullProperty);
     assert.equal(result.propertyId, "PROP-001");
-    assert.equal(result.land.landValue, 16_000_000);
+    assert.equal(result.land.landValue, 17_000_000);
     assert.notEqual(result.building, false);
     if (result.building) {
       assert.equal(result.building.civilCost, 1_000_000);

@@ -63,7 +63,7 @@ export default function Home() {
               >
                 {(
                   [
-                    ["40:60", "Govt. / Market weight"],
+                    ["30:70", "Govt. / Market weight"],
                     ["50 yrs", "Building useful life"],
                     ["10 yrs", "Inflation forecast"],
                   ] as [string, string][]
@@ -113,7 +113,7 @@ export default function Home() {
                       Government Rate
                     </p>
                     <p className="mt-1 text-lg font-bold" style={{ color: CHARCOAL }}>
-                      40% weight
+                      30% weight
                     </p>
                   </div>
                   <div className="text-right">
@@ -124,7 +124,7 @@ export default function Home() {
                       Market Rate
                     </p>
                     <p className="mt-1 text-lg font-bold" style={{ color: CHARCOAL }}>
-                      60% weight
+                      70% weight
                     </p>
                   </div>
                 </div>
@@ -168,7 +168,7 @@ export default function Home() {
                     className="mt-2 font-mono text-sm font-semibold"
                     style={{ color: CHARCOAL }}
                   >
-                    (0.40 × Govt.) + (0.60 × Market)
+                    (0.30 × Govt.) + (0.70 × Market)
                   </p>
                 </div>
               </div>
@@ -236,7 +236,7 @@ export default function Home() {
               </p>
               <div className="mt-4 divide-y rounded border" style={{ borderColor: BORDER }}>
                 {(
-                  [["Government rate", "40%"], ["Market rate", "60%"]] as [string, string][]
+                  [["Government rate", "30%"], ["Market rate", "70%"]] as [string, string][]
                 ).map(([l, v]) => (
                   <div key={l} className="flex justify-between px-4 py-3">
                     <span className="text-base" style={{ color: MUTED }}>{l}</span>
