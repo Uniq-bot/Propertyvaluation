@@ -39,7 +39,7 @@ export interface PropertyInput {
   building?: Building;
   governmentWeight: number;
   marketWeight: number;
-  
+
 }
 
 // ── Valuation result ────────────────────────
