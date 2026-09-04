@@ -37,6 +37,9 @@ export interface PropertyInput {
   buildingAge?: number;
   hasBuilding?: boolean;
   building?: Building;
+  governmentWeight: number;
+  marketWeight: number;
+  
 }
 
 // ── Valuation result ────────────────────────

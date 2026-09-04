@@ -46,6 +46,8 @@ const emptyProperty: PropertyInput = {
   location: { district: "", municipality: "", ward: 1 },
   landAreaAana: 0,
   governmentRate: 0,
+  governmentWeight:0,
+  marketWeight: 0,
   marketRate: 0,
   buildingAge: 0,
   building: {
@@ -203,7 +205,11 @@ export default function PropertyValuationPage() {
   const updateProperty = <K extends keyof PropertyInput>(
     key: K,
     value: PropertyInput[K],
-  ) => setProperty((prev) => ({ ...prev, [key]: value }));
+  ) => {
+    
+    setProperty((prev) => ({ ...prev, [key]: value }))
+   
+  };
 
   const updateLocation = <K extends keyof Location>(
     key: K,
@@ -493,40 +499,142 @@ export default function PropertyValuationPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <div
-                    className="flex items-end gap-3 rounded-xl border p-4"
-                    style={{ borderColor: BORDER }}
-                  >
-                    <div className="flex-1">
-                      <MoneyFieldInline
-                        value={property.governmentRate}
-                        placeholder="e.g. 800000"
-                        onChange={(value) => updateProperty("governmentRate", value)}
-                      />
-                      <p className="mt-1 text-xs" style={{ color: MUTED }}>
-                        Government rate, per aana
-                      </p>
-                    </div>
-                    <WeightValue value={0.3} />
-                  </div>
+  {/* Government Rate */}
+  <div
+    className="rounded-xl border p-4"
+    style={{ borderColor: BORDER }}
+  >
+    <div className="flex items-start justify-between gap-5">
+      <div className="flex-1">
+        <div className="mb-1.5 flex items-center gap-2">
+          <h3 className="text-base font-semibold text-gray-900">
+            Government Rate
+          </h3>
 
-                  <div
-                    className="flex items-end gap-3 rounded-xl border p-4"
-                    style={{ borderColor: BORDER }}
-                  >
-                    <div className="flex-1">
-                      <MoneyFieldInline
-                        value={property.marketRate}
-                        placeholder="e.g. 2020000"
-                        onChange={(value) => updateProperty("marketRate", value)}
-                      />
-                      <p className="mt-1 text-xs" style={{ color: MUTED }}>
-                        Market rate, per aana
-                      </p>
-                    </div>
-                    <WeightValue value={0.7} />
-                  </div>
-                </div>
+          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+            Official Value
+          </span>
+        </div>
+
+        <p className="mb-3 text-sm leading-relaxed" style={{ color: MUTED }}>
+          Government-assessed land value used as a reference.
+        </p>
+
+        <MoneyFieldInline
+          value={property.governmentRate}
+          placeholder="e.g. 800000"
+          onChange={(value) =>
+            updateProperty("governmentRate", value)
+          }
+        />
+
+        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
+          Per aana
+        </p>
+      </div>
+
+      <div className="w-36">
+        <label className="mb-2 block text-sm font-semibold text-gray-700">
+          Valuation Weight
+        </label>
+
+        <select
+          value={property.governmentWeight}
+          onChange={(e) =>
+            updateProperty(
+              "governmentWeight",
+              Number(e.target.value)
+            )
+          }
+          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+          style={{ borderColor: BORDER }}
+        >
+          <option value={0.0}>0%</option>
+          <option value={0.1}>10%</option>
+          <option value={0.2}>20%</option>
+          <option value={0.3}>30%</option>
+          <option value={0.4}>40%</option>
+          <option value={0.5}>50%</option>
+          <option value={0.6}>60%</option>
+          <option value={0.7}>70%</option>
+          <option value={0.8}>80%</option>
+        </select>
+
+        <p className="mt-2 text-xs leading-relaxed" style={{ color: MUTED }}>
+          How much this rate influences the final valuation.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {/* Market Rate */}
+  <div
+    className="rounded-xl border p-4"
+    style={{ borderColor: BORDER }}
+  >
+    <div className="flex items-start justify-between gap-5">
+      <div className="flex-1">
+        <div className="mb-1.5 flex items-center gap-2">
+          <h3 className="text-base font-semibold text-gray-900">
+            Market Rate
+          </h3>
+
+          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+            Current Market
+          </span>
+        </div>
+
+        <p className="mb-3 text-sm leading-relaxed" style={{ color: MUTED }}>
+          Estimated selling price based on current local market conditions.
+        </p>
+
+        <MoneyFieldInline
+          value={property.marketRate}
+          placeholder="e.g. 2020000"
+          onChange={(value) =>
+            updateProperty("marketRate", value)
+          }
+        />
+
+        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
+          Per aana
+        </p>
+      </div>
+
+      <div className="w-36">
+        <label className="mb-2 block text-sm font-semibold text-gray-700">
+          Valuation Weight
+        </label>
+
+        <select
+          value={property.marketWeight}
+          onChange={(e) =>
+            updateProperty(
+              "marketWeight",
+              Number(e.target.value)
+            )
+          }
+          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+          style={{ borderColor: BORDER }}
+        >
+          <option value={0.0}>0%</option>
+          <option value={0.1}>10%</option>
+          <option value={0.2}>20%</option>
+          <option value={0.3}>30%</option>
+          <option value={0.4}>40%</option>
+          <option value={0.5}>50%</option>
+          <option value={0.6}>60%</option>
+          <option value={0.7}>70%</option>
+          <option value={0.8}>80%</option>
+        </select>
+
+        <p className="mt-2 text-xs leading-relaxed" style={{ color: MUTED }}>
+          How much this rate influences the final valuation.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
                 <div className="mt-7 flex items-center justify-between">
                   <button

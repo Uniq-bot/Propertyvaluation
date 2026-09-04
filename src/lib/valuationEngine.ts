@@ -11,10 +11,9 @@ import type {
 // ─────────────────────────────────────────────────────────────────
 
 export function calculateLandValue(property: PropertyInput): LandResult {
-  const { landAreaAana, governmentRate, marketRate } = property;
+  const { landAreaAana, governmentRate, marketRate, governmentWeight, marketWeight } = property;
 
-  const governmentWeight = 0.3;
-  const marketWeight = 0.7;
+  
 
   const weightedRate =
     governmentRate * governmentWeight + marketRate * marketWeight;
@@ -154,8 +153,8 @@ export default function valuateProperty(
     finalValue,
     currency: "NPR",
     audit: {
-      governmentWeight: 0.3,
-      marketWeight: 0.7,
+      governmentWeight: property.governmentWeight,
+      marketWeight: property.marketWeight,
       sanitaryRate: 0.1,
       electricalRate: 0.08,
       depreciationMethod: "straight-line",
