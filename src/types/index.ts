@@ -29,17 +29,50 @@ export interface Building {
 
 export interface PropertyInput {
   propertyId: string;
+
   location: Location;
+
   landAreaAana: number;
+
   governmentRate: number;
   marketRate: number;
   adoptedLandRate?: number;
+
   buildingAge?: number;
   hasBuilding?: boolean;
   building?: Building;
+
   governmentWeight: number;
   marketWeight: number;
 
+  structuralAmenities?: {
+    roadWidth?: number;
+    roadType?: string;
+    roadCondition?: string;
+
+    buildingType?: string;
+    buildingCondition?: string;
+
+    waterSupply?: boolean;
+    electricity?: boolean;
+    drainage?: boolean;
+
+    parkingAvailable?: boolean;
+
+    landShape?: string;
+    landFacing?: string;
+    roadAccess?: string;
+
+    distanceFromMainRoad?: number;
+    distanceFromHighway?: number;
+
+    
+  };
+  images?: {
+    name:string,
+    file:File,
+    type:string
+  }[];
 }
 
 // ── Valuation result ────────────────────────
@@ -59,6 +92,9 @@ export interface LandResult {
   weightedRate: number;
   adoptedRate: number;
   landValue: number;
+   amenityScore:number;
+    amenityAdjustment: number;
+    originalMarketRate: number;
 }
 
 export interface FloorCalculation {
@@ -108,6 +144,19 @@ export interface ValuationResult {
     electricalRate: number;
     depreciationMethod: string;
   };
+  images?: {
+    name:string,
+    file:File,
+    type:string
+  }[];
+}
+
+export type PropertyImageType = "satellite" | "trace" | "physical";
+
+export interface PropertyImage {
+  type: PropertyImageType;
+  name: string;
+  file: File;
 }
 
 // ── Inflation API ────────────────────────────

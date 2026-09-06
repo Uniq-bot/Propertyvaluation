@@ -48,7 +48,7 @@ export default function Home() {
 
               {/* Heading */}
               <h1
-                className="max-w-2xl font-serif text-2xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
+                className="max-w-2xl font-serif text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
                 style={{ color: CHARCOAL }}
               >
                 Know the real value

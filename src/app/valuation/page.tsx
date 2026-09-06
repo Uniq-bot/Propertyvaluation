@@ -26,16 +26,19 @@ import type {
   Location,
   PropertyInput,
   BuildingResult,
+  PropertyImage,
+  PropertyImageType,
 } from "@/types";
+import { LandPlot, X } from "lucide-react";
 
 // ── Design tokens ────────────────────────────
 const CHARCOAL = "#10151f";
-const NAVY     = CHARCOAL;
-const BG       = "#f7f3ea";
-const BORDER   = "#e8dfc8";
-const TEXT     = "#10151f";
-const MUTED    = "#475569";
-const FAINT    = "#64748b";
+const NAVY = CHARCOAL;
+const BG = "#f7f3ea";
+const BORDER = "#e8dfc8";
+const TEXT = "#10151f";
+const MUTED = "#475569";
+const FAINT = "#64748b";
 
 // ── Helpers ──────────────────────────────────
 const generatePropertyId = () =>
@@ -46,10 +49,23 @@ const emptyProperty: PropertyInput = {
   location: { district: "", municipality: "", ward: 1 },
   landAreaAana: 0,
   governmentRate: 0,
-  governmentWeight:0,
+  governmentWeight: 0,
   marketWeight: 0,
   marketRate: 0,
   buildingAge: 0,
+
+  structuralAmenities: {
+    roadWidth: 0,
+    roadType: "",
+    roadCondition: "",
+    landFacing: "",
+    landShape: "",
+    waterSupply: false,
+    drainage: false,
+    electricity: false,
+    parkingAvailable: false,
+  },
+
   building: {
     defaultRatePerSqft: 0,
     sanitaryRate: 0.1,
@@ -59,9 +75,8 @@ const emptyProperty: PropertyInput = {
     floors: [],
   },
 };
-
-const STEPS = ["Location", "Land", "Building", "Review"] as const;
-type StepIndex = 0 | 1 | 2 | 3;
+const STEPS = ["Location", "Land", "Building", "Image", "Review"] as const;
+type StepIndex = 0 | 1 | 2 | 3 | 4;
 
 // ── StepCard ─────────────────────────────────
 function StepCard({
@@ -104,11 +119,11 @@ function Stepper({
   return (
     <ol className="mb-6 flex items-center">
       {STEPS.map((label, i) => {
-        const idx      = i as StepIndex;
-        const done     = idx < step;
-        const active   = idx === step;
-        const locked   = idx > furthestUnlocked;
-        const isLast   = i === STEPS.length - 1;
+        const idx = i as StepIndex;
+        const done = idx < step;
+        const active = idx === step;
+        const locked = idx > furthestUnlocked;
+        const isLast = i === STEPS.length - 1;
         return (
           <li key={label} className="flex flex-1 items-center">
             <button
@@ -116,7 +131,9 @@ function Stepper({
               disabled={locked}
               onClick={() => onJump(idx)}
               className={`flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-sm font-semibold transition sm:px-3 ${
-                locked ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:opacity-90"
+                locked
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer hover:opacity-90"
               }`}
               style={{
                 backgroundColor: active ? NAVY : done ? "#24211c" : "#e8dfc8",
@@ -126,7 +143,11 @@ function Stepper({
               <span
                 className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold"
                 style={{
-                  background: active ? "rgba(255,255,255,0.2)" : done ? "rgba(255,255,255,0.15)" : "#fff",
+                  background: active
+                    ? "rgba(255,255,255,0.2)"
+                    : done
+                      ? "rgba(255,255,255,0.15)"
+                      : "#fff",
                   color: active || done ? "white" : FAINT,
                 }}
               >
@@ -151,15 +172,19 @@ function Stepper({
 export default function PropertyValuationPage() {
   const router = useRouter();
 
-  const [property, setProperty]             = useState<PropertyInput>(emptyProperty);
-  const [result, setResult]                 = useState<ValuationResult | null>(null);
-  const [loading, setLoading]               = useState(false);
-  const [error, setError]                   = useState("");
+  const [property, setProperty] = useState<PropertyInput>(emptyProperty);
+  const [result, setResult] = useState<ValuationResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [includeBuilding, setIncludeBuilding] = useState(true);
-  const [step, setStep]                     = useState<StepIndex>(0);
+  const [step, setStep] = useState<StepIndex>(0);
   const [furthestUnlocked, setFurthestUnlocked] = useState<StepIndex>(0);
-  const [formOpen, setFormOpen]             = useState(true);
-  const [isReportOpen, setIsReportOpen]     = useState(false);
+  const [formOpen, setFormOpen] = useState(true);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [images, setImages] = useState<
+    { name: string; file: File; type: string }[]
+  >([]);
+  console.log(images);
 
   // Derived selects
   const selectedDistrictInfo = BAGMATI_PROVINCE_DATA.find(
@@ -206,9 +231,7 @@ export default function PropertyValuationPage() {
     key: K,
     value: PropertyInput[K],
   ) => {
-    
-    setProperty((prev) => ({ ...prev, [key]: value }))
-   
+    setProperty((prev) => ({ ...prev, [key]: value }));
   };
 
   const updateLocation = <K extends keyof Location>(
@@ -228,7 +251,20 @@ export default function PropertyValuationPage() {
       ...prev,
       building: { ...prev.building!, [key]: value },
     }));
-
+  const updateAmenity = <
+    K extends keyof NonNullable<PropertyInput["structuralAmenities"]>,
+  >(
+    key: K,
+    value: NonNullable<PropertyInput["structuralAmenities"]>[K],
+  ) => {
+    setProperty((prev) => ({
+      ...prev,
+      structuralAmenities: {
+        ...prev.structuralAmenities,
+        [key]: value,
+      },
+    }));
+  };
   const updateFloor = (index: number, area: number) =>
     setProperty((prev) => ({
       ...prev,
@@ -255,10 +291,13 @@ export default function PropertyValuationPage() {
     setProperty((prev) => {
       const n = prev.building!.floors.length;
       const defaultName =
-        n === 0 ? "Ground Floor"
-        : n === 1 ? "First Floor"
-        : n === 2 ? "Second Floor"
-        : `Floor ${n + 1}`;
+        n === 0
+          ? "Ground Floor"
+          : n === 1
+            ? "First Floor"
+            : n === 2
+              ? "Second Floor"
+              : `Floor ${n + 1}`;
       return {
         ...prev,
         building: {
@@ -267,7 +306,51 @@ export default function PropertyValuationPage() {
         },
       };
     });
+  const upDateImageToProperty = (
+    images: { name: string; file: File; type: string }[],
+  ) => {
+    setProperty((prev) => ({
+      ...prev,
+      images: [...(prev.images ?? []), ...images],
+    }));
 
+    advance(3);
+  };
+
+  const handleImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    imageType: PropertyImageType,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const imageNames: Record<PropertyImageType, string> = {
+      satellite: "Satellite View",
+      trace: "Trace View",
+      physical: "Physical View",
+    };
+
+    const newImage: PropertyImage = {
+      type: imageType,
+      name: imageNames[imageType],
+      file,
+    };
+
+    // Replace existing image of the same type
+    setImages((prevImages) => [
+      ...prevImages.filter((image) => image.type !== imageType),
+      newImage,
+    ]);
+
+    // Allow selecting the same file again
+    event.target.value = "";
+  };
+  const deleteImage = (imageType: PropertyImageType) => {
+    setImages((prevImages) =>
+      prevImages.filter((image) => image.type !== imageType),
+    );
+  };
   const removeFloor = (index: number) =>
     setProperty((prev) => ({
       ...prev,
@@ -306,11 +389,17 @@ export default function PropertyValuationPage() {
       setResult(data as ValuationResult);
       setFormOpen(false);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unable to complete the valuation.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to complete the valuation.",
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  console.log(result);
 
   // Convenience typed cast for building result
   const buildingResult = result?.building as BuildingResult | false | undefined;
@@ -318,7 +407,6 @@ export default function PropertyValuationPage() {
   return (
     <main className="min-h-screen" style={{ backgroundColor: BG, color: TEXT }}>
       <div className="mx-auto max-w-3xl px-5 py-8">
-
         {/* ── Form wizard ──────────────────────────── */}
         {formOpen ? (
           <>
@@ -341,12 +429,16 @@ export default function PropertyValuationPage() {
                         label="Property reference"
                         value={property.propertyId}
                         placeholder="e.g. VAL-2026-839201"
-                        onChange={(value) => updateProperty("propertyId", value)}
+                        onChange={(value) =>
+                          updateProperty("propertyId", value)
+                        }
                       />
                     </div>
                     <button
                       type="button"
-                      onClick={() => updateProperty("propertyId", generatePropertyId())}
+                      onClick={() =>
+                        updateProperty("propertyId", generatePropertyId())
+                      }
                       className="w-full rounded-lg border px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
                       style={{ borderColor: BORDER, color: NAVY }}
                     >
@@ -417,7 +509,11 @@ export default function PropertyValuationPage() {
                       onChange={(e) =>
                         setProperty((prev) => ({
                           ...prev,
-                          location: { ...prev.location, municipality: e.target.value, ward: 1 },
+                          location: {
+                            ...prev.location,
+                            municipality: e.target.value,
+                            ward: 1,
+                          },
                         }))
                       }
                       disabled={!property.location.district}
@@ -447,16 +543,20 @@ export default function PropertyValuationPage() {
                     </label>
                     <select
                       value={property.location.ward || 1}
-                      onChange={(e) => updateLocation("ward", Number(e.target.value))}
+                      onChange={(e) =>
+                        updateLocation("ward", Number(e.target.value))
+                      }
                       disabled={!property.location.municipality}
                       className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
                       style={{ borderColor: BORDER }}
                     >
-                      {Array.from({ length: maxWards }, (_, i) => i + 1).map((w) => (
-                        <option key={w} value={w}>
-                          Ward {w}
-                        </option>
-                      ))}
+                      {Array.from({ length: maxWards }, (_, i) => i + 1).map(
+                        (w) => (
+                          <option key={w} value={w}>
+                            Ward {w}
+                          </option>
+                        ),
+                      )}
                     </select>
                   </div>
                 </div>
@@ -499,142 +599,384 @@ export default function PropertyValuationPage() {
                 </div>
 
                 <div className="space-y-4">
-  {/* Government Rate */}
-  <div
-    className="rounded-xl border p-4"
-    style={{ borderColor: BORDER }}
-  >
-    <div className="flex items-start justify-between gap-5">
-      <div className="flex-1">
-        <div className="mb-1.5 flex items-center gap-2">
-          <h3 className="text-base font-semibold text-gray-900">
-            Government Rate
-          </h3>
+                  {/* Government Rate */}
+                  <div
+                    className="rounded-xl border p-4"
+                    style={{ borderColor: BORDER }}
+                  >
+                    <div className="flex items-start justify-between gap-5">
+                      <div className="flex-1">
+                        <div className="mb-1.5 flex items-center gap-2">
+                          <h3 className="text-base font-semibold text-gray-900">
+                            Government Rate
+                          </h3>
 
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-            Official Value
-          </span>
-        </div>
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                            Official Value
+                          </span>
+                        </div>
 
-        <p className="mb-3 text-sm leading-relaxed" style={{ color: MUTED }}>
-          Government-assessed land value used as a reference.
-        </p>
+                        <p
+                          className="mb-3 text-sm leading-relaxed"
+                          style={{ color: MUTED }}
+                        >
+                          Government-assessed land value used as a reference.
+                        </p>
 
-        <MoneyFieldInline
-          value={property.governmentRate}
-          placeholder="e.g. 800000"
-          onChange={(value) =>
-            updateProperty("governmentRate", value)
-          }
-        />
+                        <MoneyFieldInline
+                          value={property.governmentRate}
+                          placeholder="e.g. 800000"
+                          onChange={(value) =>
+                            updateProperty("governmentRate", value)
+                          }
+                        />
 
-        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
-          Per aana
-        </p>
-      </div>
+                        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
+                          Per aana
+                        </p>
+                      </div>
 
-      <div className="w-36">
-        <label className="mb-2 block text-sm font-semibold text-gray-700">
-          Valuation Weight
-        </label>
+                      <div className="w-36">
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                          Valuation Weight
+                        </label>
 
-        <select
-          value={property.governmentWeight}
-          onChange={(e) =>
-            updateProperty(
-              "governmentWeight",
-              Number(e.target.value)
-            )
-          }
-          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
-          style={{ borderColor: BORDER }}
-        >
-          <option value={0.0}>0%</option>
-          <option value={0.1}>10%</option>
-          <option value={0.2}>20%</option>
-          <option value={0.3}>30%</option>
-          <option value={0.4}>40%</option>
-          <option value={0.5}>50%</option>
-          <option value={0.6}>60%</option>
-          <option value={0.7}>70%</option>
-          <option value={0.8}>80%</option>
-        </select>
+                        <select
+                          value={property.governmentWeight}
+                          onChange={(e) =>
+                            updateProperty(
+                              "governmentWeight",
+                              Number(e.target.value),
+                            )
+                          }
+                          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <option value={0.0}>0%</option>
+                          <option value={0.1}>10%</option>
+                          <option value={0.2}>20%</option>
+                          <option value={0.3}>30%</option>
+                          <option value={0.4}>40%</option>
+                          <option value={0.5}>50%</option>
+                          <option value={0.6}>60%</option>
+                          <option value={0.7}>70%</option>
+                          <option value={0.8}>80%</option>
+                        </select>
 
-        <p className="mt-2 text-xs leading-relaxed" style={{ color: MUTED }}>
-          How much this rate influences the final valuation.
-        </p>
-      </div>
-    </div>
-  </div>
+                        <p
+                          className="mt-2 text-xs leading-relaxed"
+                          style={{ color: MUTED }}
+                        >
+                          How much this rate influences the final valuation.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Property Factors */}
+                  <div
+                    className="mt-6 rounded-xl border p-4 sm:p-5"
+                    style={{ borderColor: BORDER }}
+                  >
+                    <div className="mb-5">
+                      <h3 className="text-base font-semibold text-gray-900">
+                        Property factors
+                      </h3>
+                      <p
+                        className="mt-1 text-sm leading-relaxed"
+                        style={{ color: MUTED }}
+                      >
+                        A few local factors that can affect the property's
+                        market value.
+                      </p>
+                    </div>
 
-  {/* Market Rate */}
-  <div
-    className="rounded-xl border p-4"
-    style={{ borderColor: BORDER }}
-  >
-    <div className="flex items-start justify-between gap-5">
-      <div className="flex-1">
-        <div className="mb-1.5 flex items-center gap-2">
-          <h3 className="text-base font-semibold text-gray-900">
-            Market Rate
-          </h3>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      {/* Road Width */}
+                      <NumberField
+                        label="Road width"
+                        suffix="ft"
+                        placeholder="e.g. 20"
+                        value={property.structuralAmenities?.roadWidth ?? 0}
+                        onChange={(value) => updateAmenity("roadWidth", value)}
+                      />
 
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-            Current Market
-          </span>
-        </div>
+                      {/* Road Type */}
+                      <div>
+                        <label
+                          className="block text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: MUTED }}
+                        >
+                          Road type
+                        </label>
 
-        <p className="mb-3 text-sm leading-relaxed" style={{ color: MUTED }}>
-          Estimated selling price based on current local market conditions.
-        </p>
+                        <select
+                          value={property.structuralAmenities?.roadType ?? ""}
+                          onChange={(e) =>
+                            updateAmenity("roadType", e.target.value)
+                          }
+                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <option value="">Select road type</option>
+                          <option value="Blacktopped">Blacktopped</option>
+                          <option value="Concrete">Concrete</option>
+                          <option value="Gravel">Gravel</option>
+                          <option value="Earthen">Earthen</option>
+                        </select>
+                      </div>
 
-        <MoneyFieldInline
-          value={property.marketRate}
-          placeholder="e.g. 2020000"
-          onChange={(value) =>
-            updateProperty("marketRate", value)
-          }
-        />
+                      {/* Road Condition */}
+                      <div>
+                        <label
+                          className="block text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: MUTED }}
+                        >
+                          Road condition
+                        </label>
 
-        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
-          Per aana
-        </p>
-      </div>
+                        <select
+                          value={
+                            property.structuralAmenities?.roadCondition ?? ""
+                          }
+                          onChange={(e) =>
+                            updateAmenity("roadCondition", e.target.value)
+                          }
+                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <option value="">Select condition</option>
+                          <option value="Good">Good</option>
+                          <option value="Average">Average</option>
+                          <option value="Poor">Poor</option>
+                        </select>
+                      </div>
 
-      <div className="w-36">
-        <label className="mb-2 block text-sm font-semibold text-gray-700">
-          Valuation Weight
-        </label>
+                      {/* Land Facing */}
+                      <div>
+                        <label
+                          className="block text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: MUTED }}
+                        >
+                          Land facing
+                        </label>
 
-        <select
-          value={property.marketWeight}
-          onChange={(e) =>
-            updateProperty(
-              "marketWeight",
-              Number(e.target.value)
-            )
-          }
-          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
-          style={{ borderColor: BORDER }}
-        >
-          <option value={0.0}>0%</option>
-          <option value={0.1}>10%</option>
-          <option value={0.2}>20%</option>
-          <option value={0.3}>30%</option>
-          <option value={0.4}>40%</option>
-          <option value={0.5}>50%</option>
-          <option value={0.6}>60%</option>
-          <option value={0.7}>70%</option>
-          <option value={0.8}>80%</option>
-        </select>
+                        <select
+                          value={property.structuralAmenities?.landFacing ?? ""}
+                          onChange={(e) =>
+                            updateAmenity("landFacing", e.target.value)
+                          }
+                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <option value="">Select facing</option>
+                          <option value="East">East</option>
+                          <option value="West">West</option>
+                          <option value="North">North</option>
+                          <option value="South">South</option>
+                        </select>
+                      </div>
 
-        <p className="mt-2 text-xs leading-relaxed" style={{ color: MUTED }}>
-          How much this rate influences the final valuation.
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
+                      {/* Land Shape */}
+                      <div>
+                        <label
+                          className="block text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: MUTED }}
+                        >
+                          Land shape
+                        </label>
+
+                        <select
+                          value={property.structuralAmenities?.landShape ?? ""}
+                          onChange={(e) =>
+                            updateAmenity("landShape", e.target.value)
+                          }
+                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <option value="">Select shape</option>
+                          <option value="Rectangular">Rectangular</option>
+                          <option value="Square">Square</option>
+                          <option value="Irregular">Irregular</option>
+                        </select>
+                      </div>
+
+                      {/* Facilities */}
+                      <div className="sm:col-span-2">
+                        <label
+                          className="block text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: MUTED }}
+                        >
+                          Available facilities
+                        </label>
+
+                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          {/* Water */}
+                          <label
+                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            style={{ borderColor: BORDER }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                property.structuralAmenities?.waterSupply ??
+                                false
+                              }
+                              onChange={(e) =>
+                                updateAmenity("waterSupply", e.target.checked)
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm font-medium text-gray-800">
+                              Water supply
+                            </span>
+                          </label>
+
+                          {/* Drainage */}
+                          <label
+                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            style={{ borderColor: BORDER }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                property.structuralAmenities?.drainage ?? false
+                              }
+                              onChange={(e) =>
+                                updateAmenity("drainage", e.target.checked)
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm font-medium text-gray-800">
+                              Drainage
+                            </span>
+                          </label>
+
+                          {/* Electricity */}
+                          <label
+                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            style={{ borderColor: BORDER }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={
+                                property.structuralAmenities?.electricity ??
+                                false
+                              }
+                              onChange={(e) =>
+                                updateAmenity("electricity", e.target.checked)
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm font-medium text-gray-800">
+                              Electricity
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Parking */}
+                      <div className="sm:col-span-2">
+                        <label
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={
+                              property.structuralAmenities?.parkingAvailable ??
+                              false
+                            }
+                            onChange={(e) =>
+                              updateAmenity(
+                                "parkingAvailable",
+                                e.target.checked,
+                              )
+                            }
+                            className="h-4 w-4"
+                          />
+                          <span className="text-sm font-medium text-gray-800">
+                            Parking available
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Market Rate */}
+                  <div
+                    className="rounded-xl border p-4"
+                    style={{ borderColor: BORDER }}
+                  >
+                    <div className="flex items-start justify-between gap-5">
+                      <div className="flex-1">
+                        <div className="mb-1.5 flex items-center gap-2">
+                          <h3 className="text-base font-semibold text-gray-900">
+                            Market Rate
+                          </h3>
+
+                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                            Current Market
+                          </span>
+                        </div>
+
+                        <p
+                          className="mb-3 text-sm leading-relaxed"
+                          style={{ color: MUTED }}
+                        >
+                          Estimated selling price based on current local market
+                          conditions.
+                        </p>
+
+                        <MoneyFieldInline
+                          value={property.marketRate}
+                          placeholder="e.g. 2020000"
+                          onChange={(value) =>
+                            updateProperty("marketRate", value)
+                          }
+                        />
+
+                        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
+                          Per aana
+                        </p>
+                      </div>
+
+                      <div className="w-36">
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                          Valuation Weight
+                        </label>
+
+                        <select
+                          value={property.marketWeight}
+                          onChange={(e) =>
+                            updateProperty(
+                              "marketWeight",
+                              Number(e.target.value),
+                            )
+                          }
+                          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+                          style={{ borderColor: BORDER }}
+                        >
+                          <option value={0.0}>0%</option>
+                          <option value={0.1}>10%</option>
+                          <option value={0.2}>20%</option>
+                          <option value={0.3}>30%</option>
+                          <option value={0.4}>40%</option>
+                          <option value={0.5}>50%</option>
+                          <option value={0.6}>60%</option>
+                          <option value={0.7}>70%</option>
+                          <option value={0.8}>80%</option>
+                        </select>
+
+                        <p
+                          className="mt-2 text-xs leading-relaxed"
+                          style={{ color: MUTED }}
+                        >
+                          How much this rate influences the final valuation.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="mt-7 flex items-center justify-between">
                   <button
@@ -693,19 +1035,27 @@ export default function PropertyValuationPage() {
                         suffix="/ sqft"
                         placeholder="e.g. 2500"
                         value={property.building?.defaultRatePerSqft ?? 0}
-                        onChange={(value) => updateBuilding("defaultRatePerSqft", value)}
+                        onChange={(value) =>
+                          updateBuilding("defaultRatePerSqft", value)
+                        }
                       />
                       <NumberField
                         label="Building age"
                         suffix="Years"
                         placeholder="e.g. 5"
                         value={property.buildingAge ?? 0}
-                        onChange={(value) => updateProperty("buildingAge", value)}
+                        onChange={(value) =>
+                          updateProperty("buildingAge", value)
+                        }
                       />
                     </div>
 
-                    <p className="mt-3 text-xs italic" style={{ color: "#94a3b8" }}>
-                      Depreciation assumes a 50-year useful life and a 10% scrap value — fixed.
+                    <p
+                      className="mt-3 text-xs italic"
+                      style={{ color: "#94a3b8" }}
+                    >
+                      Depreciation assumes a 50-year useful life and a 10% scrap
+                      value — fixed.
                     </p>
 
                     <div className="mt-7">
@@ -726,7 +1076,8 @@ export default function PropertyValuationPage() {
                           className="rounded-xl border border-dashed p-6 text-center text-sm"
                           style={{ borderColor: BORDER, color: MUTED }}
                         >
-                          No floors added yet. Add each floor&apos;s built-up area.
+                          No floors added yet. Add each floor&apos;s built-up
+                          area.
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -739,7 +1090,9 @@ export default function PropertyValuationPage() {
                               <input
                                 type="text"
                                 value={floor.name}
-                                onChange={(e) => updateFloorName(index, e.target.value)}
+                                onChange={(e) =>
+                                  updateFloorName(index, e.target.value)
+                                }
                                 placeholder="Floor name"
                                 className="flex-1 rounded-lg border bg-white px-3 py-2 text-sm font-medium outline-none"
                                 style={{ borderColor: BORDER }}
@@ -748,12 +1101,19 @@ export default function PropertyValuationPage() {
                                 <input
                                   type="number"
                                   value={floor.area || ""}
-                                  onChange={(e) => updateFloor(index, Number(e.target.value))}
+                                  onChange={(e) =>
+                                    updateFloor(index, Number(e.target.value))
+                                  }
                                   placeholder="Area"
                                   className="w-28 rounded-lg border bg-white px-3 py-2 text-right text-sm outline-none"
                                   style={{ borderColor: BORDER }}
                                 />
-                                <span className="text-xs" style={{ color: MUTED }}>sqft</span>
+                                <span
+                                  className="text-xs"
+                                  style={{ color: MUTED }}
+                                >
+                                  sqft
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => removeFloor(index)}
@@ -787,7 +1147,8 @@ export default function PropertyValuationPage() {
                   <div className="flex items-center gap-3">
                     {!buildingDone && (
                       <p className="text-xs" style={{ color: "#94a3b8" }}>
-                        Add a construction rate and at least one floor&apos;s area
+                        Add a construction rate and at least one floor&apos;s
+                        area
                       </p>
                     )}
                     <button
@@ -797,6 +1158,142 @@ export default function PropertyValuationPage() {
                       className="bg-gold-gradient rounded px-6 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
+                      Add Images
+                    </button>
+                  </div>
+                </div>
+              </StepCard>
+            )}
+            {step === 3 && (
+              <StepCard
+                title="Add Images"
+                helper="Upload images of the property to enhance the valuation."
+              >
+                <div className="flex flex-col gap-6 py-10">
+                  {/* Image Upload Cards */}
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                    {(
+                      [
+                        {
+                          type: "satellite",
+                          title: "Satellite View",
+                          description:
+                            "Upload a satellite image of the property.",
+                        },
+                        {
+                          type: "trace",
+                          title: "Trace View",
+                          description:
+                            "Upload the land trace / cadastral image.",
+                        },
+                        {
+                          type: "physical",
+                          title: "Physical View",
+                          description:
+                            "Upload a physical photograph of the property.",
+                        },
+                      ] as const
+                    ).map((imageType) => {
+                      const image = images.find(
+                        (img) => img.type === imageType.type,
+                      );
+
+                      return (
+                        <div
+                          key={imageType.type}
+                          className="rounded-xl border border-[#e8dfc8] bg-[#fffdf8] p-4"
+                        >
+                          {/* Title */}
+                          <div className="mb-3">
+                            <p className="text-sm font-bold text-[#10151f]">
+                              {imageType.title}
+                            </p>
+
+                            <p className="mt-1 text-xs text-[#64748b]">
+                              {imageType.description}
+                            </p>
+                          </div>
+
+                          {/* Preview */}
+                          {image ? (
+                            <div className="relative">
+                              <img
+                                src={URL.createObjectURL(image.file)}
+                                alt={image.name}
+                                className="h-48 w-full rounded-lg object-cover"
+                              />
+
+                              {/* Delete */}
+                              <button
+                                type="button"
+                                onClick={() => deleteImage(imageType.type)}
+                                className="absolute right-2 top-2 rounded-full bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
+                                aria-label={`Remove ${image.name}`}
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+
+                              {/* Replace */}
+                              <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-semibold text-[#475569] transition hover:bg-[#f7f3ea]">
+                                Replace Image
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) =>
+                                    handleImageUpload(e, imageType.type)
+                                  }
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            /* Upload */
+                            <label className="flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
+                              <div className="mb-2 rounded-full bg-[#f7f3ea] p-3">
+                                <LandPlot className="h-5 w-5 text-[#8a5a00]" />
+                              </div>
+
+                              <p className="text-sm font-semibold text-[#10151f]">
+                                Upload Image
+                              </p>
+
+                              <p className="mt-1 text-[11px] text-[#64748b]">
+                                PNG, JPG or WEBP
+                              </p>
+
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) =>
+                                  handleImageUpload(e, imageType.type)
+                                }
+                              />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Bottom Actions */}
+                  <div className="mt-4 flex w-full items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4"
+                      style={{ color: MUTED }}
+                    >
+                      ← Back
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => upDateImageToProperty(images)}
+                      disabled={images.length === 0}
+                      className="bg-gold-gradient inline-flex items-center gap-2 rounded px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+                      style={{ color: NAVY }}
+                    >
                       Review
                     </button>
                   </div>
@@ -804,8 +1301,8 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {/* STEP 3 — Review */}
-            {step === 3 && (
+            {/* STEP 4 — Review */}
+            {step === 4 && (
               <StepCard
                 title="Check everything before calculating"
                 helper="Nothing has been sent yet — take a moment to make sure this looks right."
@@ -828,7 +1325,10 @@ export default function PropertyValuationPage() {
                         ? `${property.building?.floors.length ?? 0} floor${
                             property.building?.floors.length === 1 ? "" : "s"
                           }, ${formatNumber(
-                            property.building?.floors.reduce((s, f) => s + (f.area || 0), 0) ?? 0,
+                            property.building?.floors.reduce(
+                              (s, f) => s + (f.area || 0),
+                              0,
+                            ) ?? 0,
                           )} sqft total`
                         : "Not included — land only",
                       editStep: 2,
@@ -856,7 +1356,10 @@ export default function PropertyValuationPage() {
                 </div>
 
                 {error && (
-                  <div className="mt-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm" style={{ color: "#b91c1c" }}>
+                  <div
+                    className="mt-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm"
+                    style={{ color: "#b91c1c" }}
+                  >
                     <p className="font-semibold">Something went wrong</p>
                     <p className="mt-1">{error}</p>
                   </div>
@@ -865,7 +1368,7 @@ export default function PropertyValuationPage() {
                 <div className="mt-7 flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(3)}
                     className="text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4"
                     style={{ color: MUTED }}
                   >
@@ -901,7 +1404,10 @@ export default function PropertyValuationPage() {
             </p>
             <button
               type="button"
-              onClick={() => { setFormOpen(true); setStep(0); }}
+              onClick={() => {
+                setFormOpen(true);
+                setStep(0);
+              }}
               className="text-sm font-semibold"
               style={{ color: NAVY }}
             >
@@ -916,7 +1422,11 @@ export default function PropertyValuationPage() {
             {/* Headline total */}
             <div
               className="rounded border p-6 text-center sm:p-8"
-              style={{ borderColor: NAVY, borderWidth: 2, backgroundColor: "white" }}
+              style={{
+                borderColor: NAVY,
+                borderWidth: 2,
+                backgroundColor: "white",
+              }}
             >
               <p
                 className="text-xs font-bold uppercase tracking-widest"
@@ -934,7 +1444,10 @@ export default function PropertyValuationPage() {
                 className="mx-auto mt-5 grid max-w-md grid-cols-2 gap-4 border-t pt-5"
                 style={{ borderColor: BORDER }}
               >
-                <SummaryAmount label="Land" value={formatNPR(result.land.landValue)} />
+                <SummaryAmount
+                  label="Land"
+                  value={formatNPR(result.land.landValue)}
+                />
                 <SummaryAmount
                   label="Building"
                   value={formatNPR(
@@ -952,8 +1465,18 @@ export default function PropertyValuationPage() {
                   className="bg-gold-gradient rounded-lg px-6 py-2.5 text-sm font-bold shadow transition hover:opacity-90 flex items-center gap-2"
                   style={{ color: NAVY }}
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                    />
                   </svg>
                   Generate & Print Full Report
                 </button>
@@ -973,7 +1496,10 @@ export default function PropertyValuationPage() {
             </div>
 
             {/* Full calculation sheet */}
-            <details className="rounded-2xl border bg-white" style={{ borderColor: BORDER }}>
+            <details
+              className="rounded-2xl border bg-white"
+              style={{ borderColor: BORDER }}
+            >
               <summary
                 className="cursor-pointer select-none px-6 py-4 text-sm font-semibold"
                 style={{ color: TEXT }}
@@ -989,14 +1515,24 @@ export default function PropertyValuationPage() {
                   description="How the adopted land rate and total land value were worked out."
                 >
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-sm">
+                    <table className="w-full min-w-140 text-sm">
                       <thead>
                         <tr
                           className="text-left text-xs font-semibold uppercase tracking-wide"
                           style={{ backgroundColor: "#f8f1e3", color: NAVY }}
                         >
-                          {["S.N.", "Rate category", "Rate / Aana", "Weight", "Contribution"].map((h) => (
-                            <th key={h} className="border px-4 py-3" style={{ borderColor: BORDER }}>
+                          {[
+                            "S.N.",
+                            "Rate category",
+                            "Rate / Aana",
+                            "Weight",
+                            "Contribution",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="border px-4 py-3"
+                              style={{ borderColor: BORDER }}
+                            >
                               {h}
                             </th>
                           ))}
@@ -1035,7 +1571,165 @@ export default function PropertyValuationPage() {
                     />
                   </div>
                 </ResultSection>
+                {/* Property & Amenity Assessment */}
+                <ResultSection
+                  number="2"
+                  title="Property & amenity assessment"
+                  description="Property-specific factors used to adjust the prevailing market land rate."
+                >
+                  {property.structuralAmenities ? (
+                    <>
+                      {/* Score summary */}
+                      <div
+                        className="grid gap-px overflow-hidden rounded-xl border sm:grid-cols-3"
+                        style={{ borderColor: BORDER }}
+                      >
+                        <Metric
+                          label="Amenity score"
+                          value={`${Math.round(result.land.amenityScore ?? 0)} / 100`}
+                          strong
+                        />
 
+                        <Metric
+                          label="Market rate adjustment"
+                          value={`${((result.land.amenityAdjustment ?? 0) * 100).toFixed(1)}%`}
+                        />
+
+                        <Metric
+                          label="Adjusted market rate"
+                          value={formatNPR(result.land.inputs.marketRate)}
+                          strong
+                        />
+                      </div>
+
+                      {/* Amenities */}
+                      <div
+                        className="mt-6 overflow-hidden rounded-xl border"
+                        style={{ borderColor: BORDER }}
+                      >
+                        <div
+                          className="border-b px-4 py-3"
+                          style={{
+                            borderColor: BORDER,
+                            backgroundColor: "#f8f1e3",
+                          }}
+                        >
+                          <p
+                            className="text-xs font-bold uppercase tracking-widest"
+                            style={{ color: NAVY }}
+                          >
+                            Property factors
+                          </p>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3">
+                          <AmenityResult
+                            label="Road width"
+                            value={`${property.structuralAmenities.roadWidth ?? 0} ft`}
+                          />
+
+                          <AmenityResult
+                            label="Road type"
+                            value={
+                              property.structuralAmenities.roadType ||
+                              "Not specified"
+                            }
+                          />
+
+                          <AmenityResult
+                            label="Road condition"
+                            value={
+                              property.structuralAmenities.roadCondition ||
+                              "Not specified"
+                            }
+                          />
+
+                          <AmenityResult
+                            label="Land shape"
+                            value={
+                              property.structuralAmenities.landShape ||
+                              "Not specified"
+                            }
+                          />
+
+                          <AmenityResult
+                            label="Land facing"
+                            value={
+                              property.structuralAmenities.landFacing ||
+                              "Not specified"
+                            }
+                          />
+
+                          <AmenityResult
+                            label="Water supply"
+                            value={
+                              property.structuralAmenities.waterSupply
+                                ? "Available"
+                                : "Not available"
+                            }
+                            positive={property.structuralAmenities.waterSupply}
+                          />
+
+                          <AmenityResult
+                            label="Drainage"
+                            value={
+                              property.structuralAmenities.drainage
+                                ? "Available"
+                                : "Not available"
+                            }
+                            positive={property.structuralAmenities.drainage}
+                          />
+
+                          <AmenityResult
+                            label="Electricity"
+                            value={
+                              property.structuralAmenities.electricity
+                                ? "Available"
+                                : "Not available"
+                            }
+                            positive={property.structuralAmenities.electricity}
+                          />
+
+                          <AmenityResult
+                            label="Parking"
+                            value={
+                              property.structuralAmenities.parkingAvailable
+                                ? "Available"
+                                : "Not available"
+                            }
+                            positive={
+                              property.structuralAmenities.parkingAvailable
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* Explanation */}
+                      <div
+                        className="mt-5 rounded-lg border-l-4 px-4 py-3"
+                        style={{
+                          borderColor: NAVY,
+                          backgroundColor: "#faf8f3",
+                        }}
+                      >
+                        <p
+                          className="text-xs leading-relaxed"
+                          style={{ color: MUTED }}
+                        >
+                          The amenity assessment is applied to the market rate
+                          only. The government rate remains unchanged. The
+                          resulting adjusted market rate is then combined with
+                          the government rate using the selected valuation
+                          weights.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm" style={{ color: MUTED }}>
+                      No property amenity information was provided.
+                    </p>
+                  )}
+                </ResultSection>
                 {/* Building section */}
                 {buildingResult !== false &&
                   buildingResult &&
@@ -1051,9 +1745,20 @@ export default function PropertyValuationPage() {
                             label="Total floor area"
                             value={`${formatNumber(buildingResult.totalFloorArea)} sqft`}
                           />
-                          <Metric label="Civil construction" value={formatNPR(buildingResult.civilCost)} />
-                          <Metric label="Gross building cost" value={formatNPR(buildingResult.grossBuildingCost)} />
-                          <Metric label="Depreciation" value={formatNPR(buildingResult.depreciation.amount)} />
+                          <Metric
+                            label="Civil construction"
+                            value={formatNPR(buildingResult.civilCost)}
+                          />
+                          <Metric
+                            label="Gross building cost"
+                            value={formatNPR(buildingResult.grossBuildingCost)}
+                          />
+                          <Metric
+                            label="Depreciation"
+                            value={formatNPR(
+                              buildingResult.depreciation.amount,
+                            )}
+                          />
                         </div>
 
                         <div className="mt-6 overflow-x-auto">
@@ -1061,37 +1766,66 @@ export default function PropertyValuationPage() {
                             <thead>
                               <tr
                                 className="text-left text-xs font-semibold uppercase tracking-wide"
-                                style={{ backgroundColor: "#f8f1e3", color: NAVY }}
+                                style={{
+                                  backgroundColor: "#f8f1e3",
+                                  color: NAVY,
+                                }}
                               >
-                                {["S.N.", "Floor", "Area (sq.ft.)", "Rate / sqft", "Construction cost"].map(
-                                  (h) => (
-                                    <th
-                                      key={h}
-                                      className="border px-4 py-3"
-                                      style={{ borderColor: BORDER }}
-                                    >
-                                      {h}
-                                    </th>
-                                  ),
-                                )}
+                                {[
+                                  "S.N.",
+                                  "Floor",
+                                  "Area (sq.ft.)",
+                                  "Rate / sqft",
+                                  "Construction cost",
+                                ].map((h) => (
+                                  <th
+                                    key={h}
+                                    className="border px-4 py-3"
+                                    style={{ borderColor: BORDER }}
+                                  >
+                                    {h}
+                                  </th>
+                                ))}
                               </tr>
                             </thead>
                             <tbody>
                               {buildingResult.floors.map((floor, index) => (
-                                <tr key={floor.floor} className="border-t" style={{ borderColor: BORDER }}>
-                                  <td className="border px-4 py-3" style={{ borderColor: BORDER, color: MUTED }}>
+                                <tr
+                                  key={floor.floor}
+                                  className="border-t"
+                                  style={{ borderColor: BORDER }}
+                                >
+                                  <td
+                                    className="border px-4 py-3"
+                                    style={{
+                                      borderColor: BORDER,
+                                      color: MUTED,
+                                    }}
+                                  >
                                     {index + 1}
                                   </td>
-                                  <td className="border px-4 py-3 font-medium" style={{ borderColor: BORDER }}>
+                                  <td
+                                    className="border px-4 py-3 font-medium"
+                                    style={{ borderColor: BORDER }}
+                                  >
                                     {floor.floor}
                                   </td>
-                                  <td className="border px-4 py-3 text-right" style={{ borderColor: BORDER }}>
+                                  <td
+                                    className="border px-4 py-3 text-right"
+                                    style={{ borderColor: BORDER }}
+                                  >
                                     {formatNumber(floor.area)}
                                   </td>
-                                  <td className="border px-4 py-3 text-right" style={{ borderColor: BORDER }}>
+                                  <td
+                                    className="border px-4 py-3 text-right"
+                                    style={{ borderColor: BORDER }}
+                                  >
                                     {formatNPR(floor.ratePerSqft)}
                                   </td>
-                                  <td className="border px-4 py-3 text-right font-semibold" style={{ borderColor: BORDER }}>
+                                  <td
+                                    className="border px-4 py-3 text-right font-semibold"
+                                    style={{ borderColor: BORDER }}
+                                  >
                                     {formatNPR(floor.cost)}
                                   </td>
                                 </tr>
@@ -1111,7 +1845,9 @@ export default function PropertyValuationPage() {
                           />
                           <Metric
                             label="Present building value"
-                            value={formatNPR(buildingResult.presentBuildingValue)}
+                            value={formatNPR(
+                              buildingResult.presentBuildingValue,
+                            )}
                             strong
                           />
                         </div>
@@ -1125,11 +1861,32 @@ export default function PropertyValuationPage() {
                         <div className="overflow-x-auto">
                           <table className="w-full min-w-[500px] text-sm">
                             <tbody>
-                              <DetailRow label="Building age" value={`${buildingResult.depreciation.age} years`} />
-                              <DetailRow label="Useful life" value={`${buildingResult.depreciation.usefulLife} years`} />
-                              <DetailRow label="Scrap value" value={formatPercent(buildingResult.depreciation.scrapValue)} />
-                              <DetailRow label="Annual depreciation rate" value={formatPercent(buildingResult.depreciation.annualRate)} />
-                              <DetailRow label="Depreciation amount" value={formatNPR(buildingResult.depreciation.amount)} />
+                              <DetailRow
+                                label="Building age"
+                                value={`${buildingResult.depreciation.age} years`}
+                              />
+                              <DetailRow
+                                label="Useful life"
+                                value={`${buildingResult.depreciation.usefulLife} years`}
+                              />
+                              <DetailRow
+                                label="Scrap value"
+                                value={formatPercent(
+                                  buildingResult.depreciation.scrapValue,
+                                )}
+                              />
+                              <DetailRow
+                                label="Annual depreciation rate"
+                                value={formatPercent(
+                                  buildingResult.depreciation.annualRate,
+                                )}
+                              />
+                              <DetailRow
+                                label="Depreciation amount"
+                                value={formatNPR(
+                                  buildingResult.depreciation.amount,
+                                )}
+                              />
                             </tbody>
                           </table>
                         </div>
@@ -1160,13 +1917,18 @@ export default function PropertyValuationPage() {
                 >
                   <div>
                     <p>Property reference</p>
-                    <p className="mt-1 font-mono font-semibold" style={{ color: TEXT }}>
+                    <p
+                      className="mt-1 font-mono font-semibold"
+                      style={{ color: TEXT }}
+                    >
                       {result.propertyId}
                     </p>
                   </div>
                   <div className="sm:text-right">
                     <p>Record status</p>
-                    <p className="mt-1 font-semibold text-green-700">Valuation completed</p>
+                    <p className="mt-1 font-semibold text-green-700">
+                      Valuation completed
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1184,5 +1946,40 @@ export default function PropertyValuationPage() {
         />
       )}
     </main>
+  );
+}
+
+function AmenityResult({
+  label,
+  value,
+  positive,
+}: {
+  label: string;
+  value: string;
+  positive?: boolean;
+}) {
+  return (
+    <div className="border-b p-4 sm:border-r" style={{ borderColor: BORDER }}>
+      <p
+        className="text-[11px] font-semibold uppercase tracking-wide"
+        style={{ color: MUTED }}
+      >
+        {label}
+      </p>
+
+      <p
+        className="mt-1.5 text-sm font-semibold"
+        style={{
+          color:
+            positive === true
+              ? "#166534"
+              : positive === false
+                ? "#991b1b"
+                : TEXT,
+        }}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
