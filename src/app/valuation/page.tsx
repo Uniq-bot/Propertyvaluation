@@ -90,7 +90,7 @@ function StepCard({
 }) {
   return (
     <div
-      className="rounded border bg-white p-5 sm:p-7"
+      className=" bg-white p-5 sm:p-7"
       style={{ borderColor: BORDER }}
     >
       <h2 className="font-serif text-2xl font-bold" style={{ color: NAVY }}>
@@ -130,7 +130,7 @@ function Stepper({
               type="button"
               disabled={locked}
               onClick={() => onJump(idx)}
-              className={`flex w-full items-center gap-2 rounded px-2.5 py-2 text-left text-sm font-semibold transition sm:px-3 ${
+              className={`flex w-full items-center gap-2 -2.5 py-2 text-left text-sm font-semibold transition sm:px-3 ${
                 locked
                   ? "cursor-not-allowed opacity-50"
                   : "cursor-pointer hover:opacity-90"
@@ -141,7 +141,7 @@ function Stepper({
               }}
             >
               <span
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold"
+                className="flex h-5 w-5 shrink-0 items-center justify-center -[10px] font-bold"
                 style={{
                   background: active
                     ? "rgba(255,255,255,0.2)"
@@ -439,7 +439,7 @@ export default function PropertyValuationPage() {
                       onClick={() =>
                         updateProperty("propertyId", generatePropertyId())
                       }
-                      className="w-full rounded-lg border px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
+                      className="w-full  border px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
                       style={{ borderColor: BORDER, color: NAVY }}
                     >
                       Generate new ID
@@ -454,7 +454,7 @@ export default function PropertyValuationPage() {
                       Province
                     </label>
                     <div
-                      className="mt-1.5 flex h-10 items-center rounded-lg border bg-[#f7f3ea] px-3 text-sm font-medium"
+                      className="mt-1.5 flex h-10 items-center  border bg-[#f7f3ea] px-3 text-sm font-medium"
                       style={{ borderColor: BORDER }}
                     >
                       Bagmati Province
@@ -485,7 +485,7 @@ export default function PropertyValuationPage() {
                           },
                         }));
                       }}
-                      className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                      className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
                       style={{ borderColor: BORDER }}
                     >
                       <option value="">Choose a district</option>
@@ -517,7 +517,7 @@ export default function PropertyValuationPage() {
                         }))
                       }
                       disabled={!property.location.district}
-                      className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
+                      className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
                       style={{ borderColor: BORDER }}
                     >
                       <option value="">Choose a municipality</option>
@@ -547,7 +547,7 @@ export default function PropertyValuationPage() {
                         updateLocation("ward", Number(e.target.value))
                       }
                       disabled={!property.location.municipality}
-                      className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
+                      className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
                       style={{ borderColor: BORDER }}
                     >
                       {Array.from({ length: maxWards }, (_, i) => i + 1).map(
@@ -573,7 +573,7 @@ export default function PropertyValuationPage() {
                     type="button"
                     disabled={!locationDone}
                     onClick={() => advance(0)}
-                    className="bg-gold-gradient rounded px-6 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                    className="bg-gold-gradient -6 py-2.5 px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: NAVY }}
                   >
                     Continue
@@ -601,7 +601,7 @@ export default function PropertyValuationPage() {
                 <div className="space-y-4">
                   {/* Government Rate */}
                   <div
-                    className="rounded-xl border p-4"
+                    className=" border p-4"
                     style={{ borderColor: BORDER }}
                   >
                     <div className="flex items-start justify-between gap-5">
@@ -611,7 +611,7 @@ export default function PropertyValuationPage() {
                             Government Rate
                           </h3>
 
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          <span className=" bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
                             Official Value
                           </span>
                         </div>
@@ -649,7 +649,7 @@ export default function PropertyValuationPage() {
                               Number(e.target.value),
                             )
                           }
-                          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+                          className="h-11 w-full  border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value={0.0}>0%</option>
@@ -674,7 +674,7 @@ export default function PropertyValuationPage() {
                   </div>
                   {/* Property Factors */}
                   <div
-                    className="mt-6 rounded-xl border p-4 sm:p-5"
+                    className="mt-6  border p-4 sm:p-5"
                     style={{ borderColor: BORDER }}
                   >
                     <div className="mb-5">
@@ -714,7 +714,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("roadType", e.target.value)
                           }
-                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select road type</option>
@@ -741,7 +741,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("roadCondition", e.target.value)
                           }
-                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select condition</option>
@@ -765,7 +765,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("landFacing", e.target.value)
                           }
-                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select facing</option>
@@ -790,7 +790,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("landShape", e.target.value)
                           }
-                          className="mt-1.5 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select shape</option>
@@ -812,7 +812,7 @@ export default function PropertyValuationPage() {
                         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                           {/* Water */}
                           <label
-                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
                             style={{ borderColor: BORDER }}
                           >
                             <input
@@ -833,7 +833,7 @@ export default function PropertyValuationPage() {
 
                           {/* Drainage */}
                           <label
-                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
                             style={{ borderColor: BORDER }}
                           >
                             <input
@@ -853,7 +853,7 @@ export default function PropertyValuationPage() {
 
                           {/* Electricity */}
                           <label
-                            className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
                             style={{ borderColor: BORDER }}
                           >
                             <input
@@ -877,7 +877,7 @@ export default function PropertyValuationPage() {
                       {/* Parking */}
                       <div className="sm:col-span-2">
                         <label
-                          className="flex cursor-pointer items-center gap-3 rounded-lg border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                          className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
                           style={{ borderColor: BORDER }}
                         >
                           <input
@@ -904,7 +904,7 @@ export default function PropertyValuationPage() {
 
                   {/* Market Rate */}
                   <div
-                    className="rounded-xl border p-4"
+                    className=" border p-4"
                     style={{ borderColor: BORDER }}
                   >
                     <div className="flex items-start justify-between gap-5">
@@ -914,7 +914,7 @@ export default function PropertyValuationPage() {
                             Market Rate
                           </h3>
 
-                          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          <span className=" bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
                             Current Market
                           </span>
                         </div>
@@ -953,7 +953,7 @@ export default function PropertyValuationPage() {
                               Number(e.target.value),
                             )
                           }
-                          className="h-11 w-full rounded-lg border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+                          className="h-11 w-full  border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value={0.0}>0%</option>
@@ -997,7 +997,7 @@ export default function PropertyValuationPage() {
                       type="button"
                       disabled={!landDone}
                       onClick={() => advance(1)}
-                      className="bg-gold-gradient rounded px-6 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                      className="bg-gold-gradient -6 py-2.5 px-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
                       Continue
@@ -1016,7 +1016,7 @@ export default function PropertyValuationPage() {
                       key={String(val)}
                       type="button"
                       onClick={() => setIncludeBuilding(val)}
-                      className={`flex-1 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                      className={`flex-1  border px-4 py-3 text-sm font-semibold transition ${
                         includeBuilding === val
                           ? "border-[#10151f] bg-[#10151f] text-white"
                           : "border-[#e8dfc8] bg-white text-[#10151f]"
@@ -1064,7 +1064,7 @@ export default function PropertyValuationPage() {
                         <button
                           type="button"
                           onClick={addFloor}
-                          className="bg-gold-gradient rounded px-3 py-1.5 text-xs font-bold transition"
+                          className="bg-gold-gradient -3 py-1.5 px-3 text-xs font-bold transition"
                           style={{ color: NAVY }}
                         >
                           + Add a floor
@@ -1073,7 +1073,7 @@ export default function PropertyValuationPage() {
 
                       {property.building?.floors.length === 0 ? (
                         <div
-                          className="rounded-xl border border-dashed p-6 text-center text-sm"
+                          className=" border border-dashed p-6 text-center text-sm"
                           style={{ borderColor: BORDER, color: MUTED }}
                         >
                           No floors added yet. Add each floor&apos;s built-up
@@ -1084,7 +1084,7 @@ export default function PropertyValuationPage() {
                           {property.building?.floors.map((floor, index) => (
                             <div
                               key={index}
-                              className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center"
+                              className="flex flex-col gap-3  border p-4 sm:flex-row sm:items-center"
                               style={{ borderColor: BORDER }}
                             >
                               <input
@@ -1094,7 +1094,7 @@ export default function PropertyValuationPage() {
                                   updateFloorName(index, e.target.value)
                                 }
                                 placeholder="Floor name"
-                                className="flex-1 rounded-lg border bg-white px-3 py-2 text-sm font-medium outline-none"
+                                className="flex-1  border bg-white px-3 py-2 text-sm font-medium outline-none"
                                 style={{ borderColor: BORDER }}
                               />
                               <div className="flex items-center gap-2">
@@ -1105,7 +1105,7 @@ export default function PropertyValuationPage() {
                                     updateFloor(index, Number(e.target.value))
                                   }
                                   placeholder="Area"
-                                  className="w-28 rounded-lg border bg-white px-3 py-2 text-right text-sm outline-none"
+                                  className="w-28  border bg-white px-3 py-2 text-right text-sm outline-none"
                                   style={{ borderColor: BORDER }}
                                 />
                                 <span
@@ -1155,7 +1155,7 @@ export default function PropertyValuationPage() {
                       type="button"
                       disabled={!buildingDone}
                       onClick={() => advance(2)}
-                      className="bg-gold-gradient rounded px-6 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                      className="bg-gold-gradient -6 py-2.5 px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
                       Add Images
@@ -1201,7 +1201,7 @@ export default function PropertyValuationPage() {
                       return (
                         <div
                           key={imageType.type}
-                          className="rounded-xl border border-[#e8dfc8] bg-[#fffdf8] p-4"
+                          className=" border border-[#e8dfc8] bg-[#fffdf8] p-4"
                         >
                           {/* Title */}
                           <div className="mb-3">
@@ -1220,21 +1220,21 @@ export default function PropertyValuationPage() {
                               <img
                                 src={URL.createObjectURL(image.file)}
                                 alt={image.name}
-                                className="h-48 w-full rounded-lg object-cover"
+                                className="h-48 w-full  object-cover"
                               />
 
                               {/* Delete */}
                               <button
                                 type="button"
                                 onClick={() => deleteImage(imageType.type)}
-                                className="absolute right-2 top-2 rounded-full bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
+                                className="absolute right-2 top-2  bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
                                 aria-label={`Remove ${image.name}`}
                               >
                                 <X className="h-4 w-4" />
                               </button>
 
                               {/* Replace */}
-                              <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-semibold text-[#475569] transition hover:bg-[#f7f3ea]">
+                              <label className="mt-3 flex cursor-pointer items-center justify-center  border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-semibold text-[#475569] transition hover:bg-[#f7f3ea]">
                                 Replace Image
                                 <input
                                   type="file"
@@ -1248,8 +1248,8 @@ export default function PropertyValuationPage() {
                             </div>
                           ) : (
                             /* Upload */
-                            <label className="flex h-48 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
-                              <div className="mb-2 rounded-full bg-[#f7f3ea] p-3">
+                            <label className="flex h-48 cursor-pointer flex-col items-center justify-center  border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
+                              <div className="mb-2  bg-[#f7f3ea] p-3">
                                 <LandPlot className="h-5 w-5 text-[#8a5a00]" />
                               </div>
 
@@ -1291,7 +1291,7 @@ export default function PropertyValuationPage() {
                       type="button"
                       onClick={() => upDateImageToProperty(images)}
                       disabled={images.length === 0}
-                      className="bg-gold-gradient inline-flex items-center gap-2 rounded px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+                      className="bg-gold-gradient inline-flex px-3 items-center gap-2 -6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
                       style={{ color: NAVY }}
                     >
                       Review
@@ -1336,7 +1336,7 @@ export default function PropertyValuationPage() {
                   ].map(({ label, text, editStep }) => (
                     <div
                       key={label}
-                      className="flex items-start justify-between gap-4 rounded-xl border p-4"
+                      className="flex items-start justify-between gap-4  border p-4"
                       style={{ borderColor: BORDER }}
                     >
                       <div>
@@ -1357,7 +1357,7 @@ export default function PropertyValuationPage() {
 
                 {error && (
                   <div
-                    className="mt-5 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm"
+                    className="mt-5  border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm"
                     style={{ color: "#b91c1c" }}
                   >
                     <p className="font-semibold">Something went wrong</p>
@@ -1377,12 +1377,12 @@ export default function PropertyValuationPage() {
                   <button
                     onClick={calculateValuation}
                     disabled={loading}
-                    className="bg-gold-gradient inline-flex items-center gap-2 rounded px-6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+                    className="bg-gold-gradient inline-flex items-center gap-2 -6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
                     style={{ color: NAVY }}
                   >
                     {loading ? (
                       <>
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#10151f]/30 border-t-[#10151f]" />
+                        <span className="h-4 w-4 animate-spin  border-2 border-[#10151f]/30 border-t-[#10151f]" />
                         Calculating…
                       </>
                     ) : (
@@ -1395,7 +1395,7 @@ export default function PropertyValuationPage() {
           </>
         ) : (
           <div
-            className="mb-6 flex items-center justify-between rounded-2xl border p-4"
+            className="mb-6 flex items-center justify-between  border p-4"
             style={{ borderColor: BORDER }}
           >
             <p className="text-sm" style={{ color: MUTED }}>
@@ -1421,7 +1421,7 @@ export default function PropertyValuationPage() {
           <div className="mt-8 space-y-6">
             {/* Headline total */}
             <div
-              className="rounded border p-6 text-center sm:p-8"
+              className=" p-6 text-center sm:p-8"
               style={{
                 borderColor: NAVY,
                 borderWidth: 2,
@@ -1462,7 +1462,7 @@ export default function PropertyValuationPage() {
                 <button
                   type="button"
                   onClick={() => setIsReportOpen(true)}
-                  className="bg-gold-gradient rounded-lg px-6 py-2.5 text-sm font-bold shadow transition hover:opacity-90 flex items-center gap-2"
+                  className="bg-gold-gradient  px-6 py-2.5 text-sm font-bold shadow transition hover:opacity-90 flex items-center gap-2"
                   style={{ color: NAVY }}
                 >
                   <svg
@@ -1487,7 +1487,7 @@ export default function PropertyValuationPage() {
                       `/auction-analysis?amount=${result.finalValue}&id=${encodeURIComponent(result.propertyId)}`,
                     )
                   }
-                  className="rounded-lg border px-5 py-2.5 text-sm font-bold transition hover:bg-[#f7f3ea]"
+                  className=" border px-5 py-2.5 text-sm font-bold transition hover:bg-[#f7f3ea]"
                   style={{ borderColor: BORDER, color: NAVY }}
                 >
                   See auction estimate →
@@ -1497,7 +1497,7 @@ export default function PropertyValuationPage() {
 
             {/* Full calculation sheet */}
             <details
-              className="rounded-2xl border bg-white"
+              className=" border bg-white"
               style={{ borderColor: BORDER }}
             >
               <summary
@@ -1581,7 +1581,7 @@ export default function PropertyValuationPage() {
                     <>
                       {/* Score summary */}
                       <div
-                        className="grid gap-px overflow-hidden rounded-xl border sm:grid-cols-3"
+                        className="grid gap-px overflow-hidden  border sm:grid-cols-3"
                         style={{ borderColor: BORDER }}
                       >
                         <Metric
@@ -1604,7 +1604,7 @@ export default function PropertyValuationPage() {
 
                       {/* Amenities */}
                       <div
-                        className="mt-6 overflow-hidden rounded-xl border"
+                        className="mt-6 overflow-hidden  border"
                         style={{ borderColor: BORDER }}
                       >
                         <div
@@ -1706,7 +1706,7 @@ export default function PropertyValuationPage() {
 
                       {/* Explanation */}
                       <div
-                        className="mt-5 rounded-lg border-l-4 px-4 py-3"
+                        className="mt-5  border-l-4 px-4 py-3"
                         style={{
                           borderColor: NAVY,
                           backgroundColor: "#faf8f3",
