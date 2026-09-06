@@ -321,6 +321,11 @@ export default function valuateProperty(
 
   return {
     propertyId: property.propertyId,
+    ownerDetails:property.ownerDetails,
+    valuatorDetail:{
+      valuatorName:"Nepal Property Valuation",
+
+    },
     valuationMethod: {
       land: "Weighted Average Method",
       building: "Cost Approach with Straight-Line Depreciation",

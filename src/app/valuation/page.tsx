@@ -28,17 +28,20 @@ import type {
   BuildingResult,
   PropertyImage,
   PropertyImageType,
+  OwnerDetail,
 } from "@/types";
 import { LandPlot, X } from "lucide-react";
+import { Stepper } from "@/components/Steppers";
+import { StepCard } from "@/components/StepCard";
 
 // ── Design tokens ────────────────────────────
-const CHARCOAL = "#10151f";
-const NAVY = CHARCOAL;
-const BG = "#f7f3ea";
-const BORDER = "#e8dfc8";
-const TEXT = "#10151f";
-const MUTED = "#475569";
-const FAINT = "#64748b";
+export const CHARCOAL = "#10151f";
+export const NAVY = CHARCOAL;
+export const BG = "#f7f3ea";
+export const BORDER = "#e8dfc8";
+export const TEXT = "#10151f";
+export const MUTED = "#475569";
+export const FAINT = "#64748b";
 
 // ── Helpers ──────────────────────────────────
 const generatePropertyId = () =>
@@ -46,6 +49,11 @@ const generatePropertyId = () =>
 
 const emptyProperty: PropertyInput = {
   propertyId: generatePropertyId(),
+  ownerDetails: {
+    ownerName: "",
+    ownerNumber: 0,
+    ownerLocation: ""
+  },
   location: { district: "", municipality: "", ward: 1 },
   landAreaAana: 0,
   governmentRate: 0,
@@ -75,104 +83,22 @@ const emptyProperty: PropertyInput = {
     floors: [],
   },
 };
-const STEPS = ["Location", "Land", "Building", "Image", "Review"] as const;
-type StepIndex = 0 | 1 | 2 | 3 | 4;
-
-// ── StepCard ─────────────────────────────────
-function StepCard({
-  title,
-  helper,
-  children,
-}: {
-  title: string;
-  helper?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className=" bg-white p-5 sm:p-7"
-      style={{ borderColor: BORDER }}
-    >
-      <h2 className="font-serif text-2xl font-bold" style={{ color: NAVY }}>
-        {title}
-      </h2>
-      {helper && (
-        <p className="mt-1.5 text-base" style={{ color: MUTED }}>
-          {helper}
-        </p>
-      )}
-      <div className="mt-6">{children}</div>
-    </div>
-  );
-}
-
-// ── Stepper ──────────────────────────────────
-function Stepper({
-  step,
-  onJump,
-  furthestUnlocked,
-}: {
-  step: StepIndex;
-  onJump: (s: StepIndex) => void;
-  furthestUnlocked: StepIndex;
-}) {
-  return (
-    <ol className="mb-6 flex items-center">
-      {STEPS.map((label, i) => {
-        const idx = i as StepIndex;
-        const done = idx < step;
-        const active = idx === step;
-        const locked = idx > furthestUnlocked;
-        const isLast = i === STEPS.length - 1;
-        return (
-          <li key={label} className="flex flex-1 items-center">
-            <button
-              type="button"
-              disabled={locked}
-              onClick={() => onJump(idx)}
-              className={`flex w-full items-center gap-2 -2.5 py-2 text-left text-sm font-semibold transition sm:px-3 ${
-                locked
-                  ? "cursor-not-allowed opacity-50"
-                  : "cursor-pointer hover:opacity-90"
-              }`}
-              style={{
-                backgroundColor: active ? NAVY : done ? "#24211c" : "#e8dfc8",
-                color: active || done ? "white" : MUTED,
-              }}
-            >
-              <span
-                className="flex h-5 w-5 shrink-0 items-center justify-center -[10px] font-bold"
-                style={{
-                  background: active
-                    ? "rgba(255,255,255,0.2)"
-                    : done
-                      ? "rgba(255,255,255,0.15)"
-                      : "#fff",
-                  color: active || done ? "white" : FAINT,
-                }}
-              >
-                {done ? "✓" : i + 1}
-              </span>
-              <span className="hidden sm:inline">{label}</span>
-            </button>
-            {!isLast && (
-              <div
-                className="mx-1 h-px w-4 shrink-0"
-                style={{ backgroundColor: BORDER }}
-              />
-            )}
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
+export const STEPS = [
+  "Owner Details",
+  "Location",
+  "Land",
+  "Building",
+  "Image",
+  "Review",
+] as const;
+export type StepIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 // ── Main component ───────────────────────────
 export default function PropertyValuationPage() {
   const router = useRouter();
 
   const [property, setProperty] = useState<PropertyInput>(emptyProperty);
+  const [ownerDetail, setOwnerDetail] = useState<OwnerDetail>({...emptyProperty.ownerDetails});
   const [result, setResult] = useState<ValuationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -233,6 +159,15 @@ export default function PropertyValuationPage() {
   ) => {
     setProperty((prev) => ({ ...prev, [key]: value }));
   };
+
+  const updatePropertyOwnerDetails=(ownerDetails: OwnerDetail)=>{
+    setProperty((prev)=>({
+      ...prev,
+      ownerDetails:ownerDetails
+    }))
+
+    advance(0)
+  }
 
   const updateLocation = <K extends keyof Location>(
     key: K,
@@ -314,7 +249,7 @@ export default function PropertyValuationPage() {
       images: [...(prev.images ?? []), ...images],
     }));
 
-    advance(3);
+    advance(5);
   };
 
   const handleImageUpload = (
@@ -396,6 +331,7 @@ export default function PropertyValuationPage() {
       );
     } finally {
       setLoading(false);
+      console.log(result)
     }
   };
 
@@ -406,7 +342,7 @@ export default function PropertyValuationPage() {
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: BG, color: TEXT }}>
-      <div className="mx-auto max-w-3xl px-5 py-8">
+      <div className="mx-auto max-w-3xl px-3 sm:px-5 py-5 sm:py-8">
         {/* ── Form wizard ──────────────────────────── */}
         {formOpen ? (
           <>
@@ -415,14 +351,80 @@ export default function PropertyValuationPage() {
               onJump={goTo}
               furthestUnlocked={furthestUnlocked}
             />
-
-            {/* STEP 0 — Location */}
             {step === 0 && (
+              <StepCard
+                title="Owner's Details"
+                helper="Who is the owner of the Property? Determine"
+              >
+                <div className="flex flex-col gap-4 sm:gap-5">
+                  <Field
+                    label="Owner Name"
+                    value={ownerDetail?.ownerName ?? ""}
+                    placeholder="e.g. John Doe"
+                    onChange={(value) =>
+                      setOwnerDetail((prev) => ({
+                        ownerNumber: prev?.ownerNumber ?? 0,
+                        ownerLocation: prev?.ownerLocation ?? "",
+                        ownerName: value,
+                      }))
+                    }
+                  />
+                  <NumberField
+                    label="Phone Number"
+                    suffix="phone"
+                    placeholder="9876543210"
+                    value={ownerDetail?.ownerNumber ?? 0}
+                    onChange={(value) =>
+                      setOwnerDetail((prev) => ({
+                        ownerName: prev?.ownerName ?? "",
+                        ownerLocation: prev?.ownerLocation ?? "",
+                        ownerNumber: value,
+                      }))
+                    }
+                  />
+                  <Field
+                    label="Owner Address"
+                    value={ownerDetail?.ownerLocation ?? ""}
+                    placeholder="e.g. Bhaktapur, Nepal"
+                    onChange={(value) =>
+                      setOwnerDetail((prev) => ({
+                        ownerNumber: prev?.ownerNumber ?? 0,
+                        ownerLocation: value,
+                        ownerName: prev?.ownerName ?? "",
+                      }))
+                    }
+                  />
+                </div>
+                <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  {!locationDone ? (
+                    <p
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: "#94a3b8" }}
+                    >
+                      Fill owner details to continue
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <button
+                    type="button"
+                    disabled={!ownerDetail?.ownerName || !ownerDetail?.ownerNumber || !ownerDetail?.ownerLocation}
+                    onClick={() => updatePropertyOwnerDetails(ownerDetail)}
+                    className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ color: NAVY }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </StepCard>
+            )}
+
+            {step === 1 && (
               <StepCard
                 title="Where is the property?"
                 helper="This determines the government rate band and local context used later."
               >
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                   <div className="flex flex-col items-stretch gap-2 sm:col-span-2 sm:flex-row sm:items-end">
                     <div className="flex-1">
                       <Field
@@ -439,7 +441,7 @@ export default function PropertyValuationPage() {
                       onClick={() =>
                         updateProperty("propertyId", generatePropertyId())
                       }
-                      className="w-full  border px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
+                      className="w-full rounded border px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
                       style={{ borderColor: BORDER, color: NAVY }}
                     >
                       Generate new ID
@@ -448,13 +450,13 @@ export default function PropertyValuationPage() {
 
                   <div className="sm:col-span-2">
                     <label
-                      className="block text-xs font-semibold uppercase tracking-wide"
+                      className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                       style={{ color: MUTED }}
                     >
                       Province
                     </label>
                     <div
-                      className="mt-1.5 flex h-10 items-center  border bg-[#f7f3ea] px-3 text-sm font-medium"
+                      className="mt-1.5 flex h-9 sm:h-10 items-center rounded border bg-[#f7f3ea] px-3 text-xs sm:text-sm font-medium"
                       style={{ borderColor: BORDER }}
                     >
                       Bagmati Province
@@ -463,7 +465,7 @@ export default function PropertyValuationPage() {
 
                   <div>
                     <label
-                      className="block text-xs font-semibold uppercase tracking-wide"
+                      className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                       style={{ color: MUTED }}
                     >
                       District
@@ -485,7 +487,7 @@ export default function PropertyValuationPage() {
                           },
                         }));
                       }}
-                      className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                      className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
                       style={{ borderColor: BORDER }}
                     >
                       <option value="">Choose a district</option>
@@ -499,7 +501,7 @@ export default function PropertyValuationPage() {
 
                   <div>
                     <label
-                      className="block text-xs font-semibold uppercase tracking-wide"
+                      className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                       style={{ color: MUTED }}
                     >
                       Municipality
@@ -517,7 +519,7 @@ export default function PropertyValuationPage() {
                         }))
                       }
                       disabled={!property.location.district}
-                      className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
+                      className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
                       style={{ borderColor: BORDER }}
                     >
                       <option value="">Choose a municipality</option>
@@ -528,7 +530,10 @@ export default function PropertyValuationPage() {
                       ))}
                     </select>
                     {!property.location.district && (
-                      <p className="mt-1 text-xs" style={{ color: "#94a3b8" }}>
+                      <p
+                        className="mt-1 text-[11px]"
+                        style={{ color: "#94a3b8" }}
+                      >
                         Pick a district first
                       </p>
                     )}
@@ -536,7 +541,7 @@ export default function PropertyValuationPage() {
 
                   <div>
                     <label
-                      className="block text-xs font-semibold uppercase tracking-wide"
+                      className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                       style={{ color: MUTED }}
                     >
                       Ward no.
@@ -547,7 +552,7 @@ export default function PropertyValuationPage() {
                         updateLocation("ward", Number(e.target.value))
                       }
                       disabled={!property.location.municipality}
-                      className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
+                      className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
                       style={{ borderColor: BORDER }}
                     >
                       {Array.from({ length: maxWards }, (_, i) => i + 1).map(
@@ -561,9 +566,12 @@ export default function PropertyValuationPage() {
                   </div>
                 </div>
 
-                <div className="mt-7 flex items-center justify-between">
+                <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   {!locationDone ? (
-                    <p className="text-xs" style={{ color: "#94a3b8" }}>
+                    <p
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: "#94a3b8" }}
+                    >
                       Choose a district, municipality and ward to continue
                     </p>
                   ) : (
@@ -572,8 +580,8 @@ export default function PropertyValuationPage() {
                   <button
                     type="button"
                     disabled={!locationDone}
-                    onClick={() => advance(0)}
-                    className="bg-gold-gradient -6 py-2.5 px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => advance(1)}
+                    className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: NAVY }}
                   >
                     Continue
@@ -582,13 +590,12 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {/* STEP 1 — Land */}
-            {step === 1 && (
+            {step === 2 && (
               <StepCard
                 title="Land details"
                 helper="We blend the government-listed rate with the going market rate — the market rate counts for more since it reflects real conditions."
               >
-                <div className="mb-6">
+                <div className="mb-5 sm:mb-6">
                   <NumberField
                     label="Land area"
                     suffix="Aana"
@@ -598,26 +605,26 @@ export default function PropertyValuationPage() {
                   />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Government Rate */}
                   <div
-                    className=" border p-4"
+                    className="rounded border p-3 sm:p-4"
                     style={{ borderColor: BORDER }}
                   >
-                    <div className="flex items-start justify-between gap-5">
-                      <div className="flex-1">
-                        <div className="mb-1.5 flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-gray-900">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-5">
+                      <div className="flex-1 w-full">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-900">
                             Government Rate
                           </h3>
 
-                          <span className=" bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-gray-600">
                             Official Value
                           </span>
                         </div>
 
                         <p
-                          className="mb-3 text-sm leading-relaxed"
+                          className="mb-3 text-xs sm:text-sm leading-relaxed"
                           style={{ color: MUTED }}
                         >
                           Government-assessed land value used as a reference.
@@ -631,13 +638,16 @@ export default function PropertyValuationPage() {
                           }
                         />
 
-                        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
+                        <p
+                          className="mt-1.5 text-xs sm:text-sm"
+                          style={{ color: MUTED }}
+                        >
                           Per aana
                         </p>
                       </div>
 
-                      <div className="w-36">
-                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                      <div className="w-full sm:w-36">
+                        <label className="mb-2 block text-xs sm:text-sm font-semibold text-gray-700">
                           Valuation Weight
                         </label>
 
@@ -649,7 +659,7 @@ export default function PropertyValuationPage() {
                               Number(e.target.value),
                             )
                           }
-                          className="h-11 w-full  border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+                          className="h-10 sm:h-11 w-full rounded border bg-white px-3 text-sm sm:text-base font-medium outline-none transition focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value={0.0}>0%</option>
@@ -664,7 +674,7 @@ export default function PropertyValuationPage() {
                         </select>
 
                         <p
-                          className="mt-2 text-xs leading-relaxed"
+                          className="mt-2 text-[11px] sm:text-xs leading-relaxed"
                           style={{ color: MUTED }}
                         >
                           How much this rate influences the final valuation.
@@ -674,15 +684,15 @@ export default function PropertyValuationPage() {
                   </div>
                   {/* Property Factors */}
                   <div
-                    className="mt-6  border p-4 sm:p-5"
+                    className="mt-4 sm:mt-6 rounded border p-3 sm:p-5"
                     style={{ borderColor: BORDER }}
                   >
-                    <div className="mb-5">
-                      <h3 className="text-base font-semibold text-gray-900">
+                    <div className="mb-4 sm:mb-5">
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900">
                         Property factors
                       </h3>
                       <p
-                        className="mt-1 text-sm leading-relaxed"
+                        className="mt-1 text-xs sm:text-sm leading-relaxed"
                         style={{ color: MUTED }}
                       >
                         A few local factors that can affect the property's
@@ -690,7 +700,7 @@ export default function PropertyValuationPage() {
                       </p>
                     </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                       {/* Road Width */}
                       <NumberField
                         label="Road width"
@@ -703,7 +713,7 @@ export default function PropertyValuationPage() {
                       {/* Road Type */}
                       <div>
                         <label
-                          className="block text-xs font-semibold uppercase tracking-wide"
+                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                           style={{ color: MUTED }}
                         >
                           Road type
@@ -714,7 +724,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("roadType", e.target.value)
                           }
-                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select road type</option>
@@ -728,7 +738,7 @@ export default function PropertyValuationPage() {
                       {/* Road Condition */}
                       <div>
                         <label
-                          className="block text-xs font-semibold uppercase tracking-wide"
+                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                           style={{ color: MUTED }}
                         >
                           Road condition
@@ -741,7 +751,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("roadCondition", e.target.value)
                           }
-                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select condition</option>
@@ -754,7 +764,7 @@ export default function PropertyValuationPage() {
                       {/* Land Facing */}
                       <div>
                         <label
-                          className="block text-xs font-semibold uppercase tracking-wide"
+                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                           style={{ color: MUTED }}
                         >
                           Land facing
@@ -765,7 +775,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("landFacing", e.target.value)
                           }
-                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select facing</option>
@@ -779,7 +789,7 @@ export default function PropertyValuationPage() {
                       {/* Land Shape */}
                       <div>
                         <label
-                          className="block text-xs font-semibold uppercase tracking-wide"
+                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                           style={{ color: MUTED }}
                         >
                           Land shape
@@ -790,7 +800,7 @@ export default function PropertyValuationPage() {
                           onChange={(e) =>
                             updateAmenity("landShape", e.target.value)
                           }
-                          className="mt-1.5 w-full  border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2"
+                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value="">Select shape</option>
@@ -803,7 +813,7 @@ export default function PropertyValuationPage() {
                       {/* Facilities */}
                       <div className="sm:col-span-2">
                         <label
-                          className="block text-xs font-semibold uppercase tracking-wide"
+                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                           style={{ color: MUTED }}
                         >
                           Available facilities
@@ -812,7 +822,7 @@ export default function PropertyValuationPage() {
                         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                           {/* Water */}
                           <label
-                            className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
                             style={{ borderColor: BORDER }}
                           >
                             <input
@@ -826,14 +836,14 @@ export default function PropertyValuationPage() {
                               }
                               className="h-4 w-4"
                             />
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-xs sm:text-sm font-medium text-gray-800">
                               Water supply
                             </span>
                           </label>
 
                           {/* Drainage */}
                           <label
-                            className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
                             style={{ borderColor: BORDER }}
                           >
                             <input
@@ -846,14 +856,14 @@ export default function PropertyValuationPage() {
                               }
                               className="h-4 w-4"
                             />
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-xs sm:text-sm font-medium text-gray-800">
                               Drainage
                             </span>
                           </label>
 
                           {/* Electricity */}
                           <label
-                            className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                            className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
                             style={{ borderColor: BORDER }}
                           >
                             <input
@@ -867,7 +877,7 @@ export default function PropertyValuationPage() {
                               }
                               className="h-4 w-4"
                             />
-                            <span className="text-sm font-medium text-gray-800">
+                            <span className="text-xs sm:text-sm font-medium text-gray-800">
                               Electricity
                             </span>
                           </label>
@@ -877,7 +887,7 @@ export default function PropertyValuationPage() {
                       {/* Parking */}
                       <div className="sm:col-span-2">
                         <label
-                          className="flex cursor-pointer items-center gap-3  border bg-white px-3 py-3 transition hover:bg-[#f7f3ea]"
+                          className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
                           style={{ borderColor: BORDER }}
                         >
                           <input
@@ -894,7 +904,7 @@ export default function PropertyValuationPage() {
                             }
                             className="h-4 w-4"
                           />
-                          <span className="text-sm font-medium text-gray-800">
+                          <span className="text-xs sm:text-sm font-medium text-gray-800">
                             Parking available
                           </span>
                         </label>
@@ -904,23 +914,23 @@ export default function PropertyValuationPage() {
 
                   {/* Market Rate */}
                   <div
-                    className=" border p-4"
+                    className="rounded border p-3 sm:p-4"
                     style={{ borderColor: BORDER }}
                   >
-                    <div className="flex items-start justify-between gap-5">
-                      <div className="flex-1">
-                        <div className="mb-1.5 flex items-center gap-2">
-                          <h3 className="text-base font-semibold text-gray-900">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-5">
+                      <div className="flex-1 w-full">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-900">
                             Market Rate
                           </h3>
 
-                          <span className=" bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          <span className="rounded bg-gray-100 px-2 py-0.5 text-[10px] sm:text-xs font-medium text-gray-600">
                             Current Market
                           </span>
                         </div>
 
                         <p
-                          className="mb-3 text-sm leading-relaxed"
+                          className="mb-3 text-xs sm:text-sm leading-relaxed"
                           style={{ color: MUTED }}
                         >
                           Estimated selling price based on current local market
@@ -935,13 +945,16 @@ export default function PropertyValuationPage() {
                           }
                         />
 
-                        <p className="mt-1.5 text-sm" style={{ color: MUTED }}>
+                        <p
+                          className="mt-1.5 text-xs sm:text-sm"
+                          style={{ color: MUTED }}
+                        >
                           Per aana
                         </p>
                       </div>
 
-                      <div className="w-36">
-                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                      <div className="w-full sm:w-36">
+                        <label className="mb-2 block text-xs sm:text-sm font-semibold text-gray-700">
                           Valuation Weight
                         </label>
 
@@ -953,7 +966,7 @@ export default function PropertyValuationPage() {
                               Number(e.target.value),
                             )
                           }
-                          className="h-11 w-full  border bg-white px-3 text-base font-medium outline-none transition focus:ring-2"
+                          className="h-10 sm:h-11 w-full rounded border bg-white px-3 text-sm sm:text-base font-medium outline-none transition focus:ring-2"
                           style={{ borderColor: BORDER }}
                         >
                           <option value={0.0}>0%</option>
@@ -968,7 +981,7 @@ export default function PropertyValuationPage() {
                         </select>
 
                         <p
-                          className="mt-2 text-xs leading-relaxed"
+                          className="mt-2 text-[11px] sm:text-xs leading-relaxed"
                           style={{ color: MUTED }}
                         >
                           How much this rate influences the final valuation.
@@ -978,26 +991,29 @@ export default function PropertyValuationPage() {
                   </div>
                 </div>
 
-                <div className="mt-7 flex items-center justify-between">
+                <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setStep(0)}
-                    className="text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4"
+                    onClick={() => setStep(1)}
+                    className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                     style={{ color: MUTED }}
                   >
                     ← Back
                   </button>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     {!landDone && (
-                      <p className="text-xs" style={{ color: "#94a3b8" }}>
+                      <p
+                        className="text-[11px] sm:text-xs"
+                        style={{ color: "#94a3b8" }}
+                      >
                         Fill in the land area and both rates
                       </p>
                     )}
                     <button
                       type="button"
                       disabled={!landDone}
-                      onClick={() => advance(1)}
-                      className="bg-gold-gradient -6 py-2.5 px-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => advance(2)}
+                      className="bg-gold-gradient rounded-md py-2.5 px-3 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
                       Continue
@@ -1007,16 +1023,15 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {/* STEP 2 — Building */}
-            {step === 2 && (
+            {step === 3 && (
               <StepCard title="Is there a building on this land?">
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   {[true, false].map((val) => (
                     <button
                       key={String(val)}
                       type="button"
                       onClick={() => setIncludeBuilding(val)}
-                      className={`flex-1  border px-4 py-3 text-sm font-semibold transition ${
+                      className={`flex-1 rounded border px-4 py-3 text-xs sm:text-sm font-semibold transition ${
                         includeBuilding === val
                           ? "border-[#10151f] bg-[#10151f] text-white"
                           : "border-[#e8dfc8] bg-white text-[#10151f]"
@@ -1028,8 +1043,8 @@ export default function PropertyValuationPage() {
                 </div>
 
                 {includeBuilding ? (
-                  <div className="mt-6">
-                    <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="mt-5 sm:mt-6">
+                    <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                       <MoneyField
                         label="Construction rate"
                         suffix="/ sqft"
@@ -1051,20 +1066,22 @@ export default function PropertyValuationPage() {
                     </div>
 
                     <p
-                      className="mt-3 text-xs italic"
+                      className="mt-3 text-[11px] sm:text-xs italic"
                       style={{ color: "#94a3b8" }}
                     >
                       Depreciation assumes a 50-year useful life and a 10% scrap
                       value — fixed.
                     </p>
 
-                    <div className="mt-7">
+                    <div className="mt-5 sm:mt-7">
                       <div className="mb-3 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold">Floors</h3>
+                        <h3 className="text-xs sm:text-sm font-semibold">
+                          Floors
+                        </h3>
                         <button
                           type="button"
                           onClick={addFloor}
-                          className="bg-gold-gradient -3 py-1.5 px-3 text-xs font-bold transition"
+                          className="bg-gold-gradient rounded px-3 py-1.5 text-[11px] sm:text-xs font-bold transition"
                           style={{ color: NAVY }}
                         >
                           + Add a floor
@@ -1073,7 +1090,7 @@ export default function PropertyValuationPage() {
 
                       {property.building?.floors.length === 0 ? (
                         <div
-                          className=" border border-dashed p-6 text-center text-sm"
+                          className="rounded border border-dashed p-5 sm:p-6 text-center text-xs sm:text-sm"
                           style={{ borderColor: BORDER, color: MUTED }}
                         >
                           No floors added yet. Add each floor&apos;s built-up
@@ -1084,7 +1101,7 @@ export default function PropertyValuationPage() {
                           {property.building?.floors.map((floor, index) => (
                             <div
                               key={index}
-                              className="flex flex-col gap-3  border p-4 sm:flex-row sm:items-center"
+                              className="flex flex-col gap-3 rounded border p-3 sm:p-4 sm:flex-row sm:items-center"
                               style={{ borderColor: BORDER }}
                             >
                               <input
@@ -1094,7 +1111,7 @@ export default function PropertyValuationPage() {
                                   updateFloorName(index, e.target.value)
                                 }
                                 placeholder="Floor name"
-                                className="flex-1  border bg-white px-3 py-2 text-sm font-medium outline-none"
+                                className="flex-1 rounded border bg-white px-3 py-2 text-xs sm:text-sm font-medium outline-none"
                                 style={{ borderColor: BORDER }}
                               />
                               <div className="flex items-center gap-2">
@@ -1105,11 +1122,11 @@ export default function PropertyValuationPage() {
                                     updateFloor(index, Number(e.target.value))
                                   }
                                   placeholder="Area"
-                                  className="w-28  border bg-white px-3 py-2 text-right text-sm outline-none"
+                                  className="w-24 sm:w-28 rounded border bg-white px-3 py-2 text-right text-xs sm:text-sm outline-none"
                                   style={{ borderColor: BORDER }}
                                 />
                                 <span
-                                  className="text-xs"
+                                  className="text-[11px] sm:text-xs"
                                   style={{ color: MUTED }}
                                 >
                                   sqft
@@ -1117,7 +1134,7 @@ export default function PropertyValuationPage() {
                                 <button
                                   type="button"
                                   onClick={() => removeFloor(index)}
-                                  className="ml-1 text-xs font-semibold"
+                                  className="ml-1 text-[11px] sm:text-xs font-semibold"
                                   style={{ color: "#b91c1c" }}
                                 >
                                   Remove
@@ -1130,23 +1147,29 @@ export default function PropertyValuationPage() {
                     </div>
                   </div>
                 ) : (
-                  <p className="mt-5 text-sm" style={{ color: MUTED }}>
+                  <p
+                    className="mt-5 text-xs sm:text-sm"
+                    style={{ color: MUTED }}
+                  >
                     The total valuation will equal the land value alone.
                   </p>
                 )}
 
-                <div className="mt-7 flex items-center justify-between">
+                <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
-                    className="text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4"
+                    onClick={() => setStep(2)}
+                    className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                     style={{ color: MUTED }}
                   >
                     ← Back
                   </button>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                     {!buildingDone && (
-                      <p className="text-xs" style={{ color: "#94a3b8" }}>
+                      <p
+                        className="text-[11px] sm:text-xs"
+                        style={{ color: "#94a3b8" }}
+                      >
                         Add a construction rate and at least one floor&apos;s
                         area
                       </p>
@@ -1154,8 +1177,8 @@ export default function PropertyValuationPage() {
                     <button
                       type="button"
                       disabled={!buildingDone}
-                      onClick={() => advance(2)}
-                      className="bg-gold-gradient -6 py-2.5 px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => advance(3)}
+                      className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
                       Add Images
@@ -1164,14 +1187,14 @@ export default function PropertyValuationPage() {
                 </div>
               </StepCard>
             )}
-            {step === 3 && (
+            {step === 4 && (
               <StepCard
                 title="Add Images"
                 helper="Upload images of the property to enhance the valuation."
               >
-                <div className="flex flex-col gap-6 py-10">
+                <div className="flex flex-col gap-5 sm:gap-6 py-6 sm:py-10">
                   {/* Image Upload Cards */}
-                  <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-3">
                     {(
                       [
                         {
@@ -1201,15 +1224,15 @@ export default function PropertyValuationPage() {
                       return (
                         <div
                           key={imageType.type}
-                          className=" border border-[#e8dfc8] bg-[#fffdf8] p-4"
+                          className="rounded border border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4"
                         >
                           {/* Title */}
                           <div className="mb-3">
-                            <p className="text-sm font-bold text-[#10151f]">
+                            <p className="text-xs sm:text-sm font-bold text-[#10151f]">
                               {imageType.title}
                             </p>
 
-                            <p className="mt-1 text-xs text-[#64748b]">
+                            <p className="mt-1 text-[11px] sm:text-xs text-[#64748b]">
                               {imageType.description}
                             </p>
                           </div>
@@ -1220,21 +1243,21 @@ export default function PropertyValuationPage() {
                               <img
                                 src={URL.createObjectURL(image.file)}
                                 alt={image.name}
-                                className="h-48 w-full  object-cover"
+                                className="h-40 sm:h-48 w-full rounded object-cover"
                               />
 
                               {/* Delete */}
                               <button
                                 type="button"
                                 onClick={() => deleteImage(imageType.type)}
-                                className="absolute right-2 top-2  bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
+                                className="absolute right-2 top-2 rounded-full bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
                                 aria-label={`Remove ${image.name}`}
                               >
                                 <X className="h-4 w-4" />
                               </button>
 
                               {/* Replace */}
-                              <label className="mt-3 flex cursor-pointer items-center justify-center  border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-semibold text-[#475569] transition hover:bg-[#f7f3ea]">
+                              <label className="mt-3 flex cursor-pointer items-center justify-center rounded border border-[#e8dfc8] bg-white px-3 py-2 text-[11px] sm:text-xs font-semibold text-[#475569] transition hover:bg-[#f7f3ea]">
                                 Replace Image
                                 <input
                                   type="file"
@@ -1248,16 +1271,16 @@ export default function PropertyValuationPage() {
                             </div>
                           ) : (
                             /* Upload */
-                            <label className="flex h-48 cursor-pointer flex-col items-center justify-center  border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
-                              <div className="mb-2  bg-[#f7f3ea] p-3">
+                            <label className="flex h-40 sm:h-48 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
+                              <div className="mb-2 rounded-full bg-[#f7f3ea] p-3">
                                 <LandPlot className="h-5 w-5 text-[#8a5a00]" />
                               </div>
 
-                              <p className="text-sm font-semibold text-[#10151f]">
+                              <p className="text-xs sm:text-sm font-semibold text-[#10151f]">
                                 Upload Image
                               </p>
 
-                              <p className="mt-1 text-[11px] text-[#64748b]">
+                              <p className="mt-1 text-[10px] sm:text-[11px] text-[#64748b]">
                                 PNG, JPG or WEBP
                               </p>
 
@@ -1277,11 +1300,11 @@ export default function PropertyValuationPage() {
                   </div>
 
                   {/* Bottom Actions */}
-                  <div className="mt-4 flex w-full items-center justify-between">
+                  <div className="mt-2 sm:mt-4 flex flex-col-reverse sm:flex-row w-full items-stretch sm:items-center justify-between gap-3">
                     <button
                       type="button"
                       onClick={() => setStep(2)}
-                      className="text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4"
+                      className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                       style={{ color: MUTED }}
                     >
                       ← Back
@@ -1291,7 +1314,7 @@ export default function PropertyValuationPage() {
                       type="button"
                       onClick={() => upDateImageToProperty(images)}
                       disabled={images.length === 0}
-                      className="bg-gold-gradient inline-flex px-3 items-center gap-2 -6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+                      className="bg-gold-gradient inline-flex justify-center px-3 items-center gap-2 rounded-md py-3 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
                       style={{ color: NAVY }}
                     >
                       Review
@@ -1301,13 +1324,12 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {/* STEP 4 — Review */}
-            {step === 4 && (
+            {step === 6 && (
               <StepCard
                 title="Check everything before calculating"
                 helper="Nothing has been sent yet — take a moment to make sure this looks right."
               >
-                <div className="space-y-4 text-sm">
+                <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                   {[
                     {
                       label: "Location",
@@ -1336,7 +1358,7 @@ export default function PropertyValuationPage() {
                   ].map(({ label, text, editStep }) => (
                     <div
                       key={label}
-                      className="flex items-start justify-between gap-4  border p-4"
+                      className="flex items-start justify-between gap-3 sm:gap-4 rounded border p-3 sm:p-4"
                       style={{ borderColor: BORDER }}
                     >
                       <div>
@@ -1346,7 +1368,7 @@ export default function PropertyValuationPage() {
                       <button
                         type="button"
                         onClick={() => setStep(editStep as StepIndex)}
-                        className="text-xs font-semibold"
+                        className="shrink-0 text-[11px] sm:text-xs font-semibold"
                         style={{ color: NAVY }}
                       >
                         Edit
@@ -1357,7 +1379,7 @@ export default function PropertyValuationPage() {
 
                 {error && (
                   <div
-                    className="mt-5  border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm"
+                    className="mt-4 sm:mt-5 rounded border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-xs sm:text-sm"
                     style={{ color: "#b91c1c" }}
                   >
                     <p className="font-semibold">Something went wrong</p>
@@ -1365,11 +1387,11 @@ export default function PropertyValuationPage() {
                   </div>
                 )}
 
-                <div className="mt-7 flex items-center justify-between">
+                <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => setStep(3)}
-                    className="text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4"
+                    className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                     style={{ color: MUTED }}
                   >
                     ← Back
@@ -1377,12 +1399,12 @@ export default function PropertyValuationPage() {
                   <button
                     onClick={calculateValuation}
                     disabled={loading}
-                    className="bg-gold-gradient inline-flex items-center gap-2 -6 py-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
+                    className="bg-gold-gradient inline-flex justify-center items-center gap-2 rounded-md py-3 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
                     style={{ color: NAVY }}
                   >
                     {loading ? (
                       <>
-                        <span className="h-4 w-4 animate-spin  border-2 border-[#10151f]/30 border-t-[#10151f]" />
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#10151f]/30 border-t-[#10151f]" />
                         Calculating…
                       </>
                     ) : (
@@ -1395,10 +1417,10 @@ export default function PropertyValuationPage() {
           </>
         ) : (
           <div
-            className="mb-6 flex items-center justify-between  border p-4"
+            className="mb-5 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 rounded border p-3 sm:p-4"
             style={{ borderColor: BORDER }}
           >
-            <p className="text-sm" style={{ color: MUTED }}>
+            <p className="text-xs sm:text-sm" style={{ color: MUTED }}>
               Showing the valuation for{" "}
               <span className="font-mono">{property.propertyId}</span>
             </p>
@@ -1408,7 +1430,7 @@ export default function PropertyValuationPage() {
                 setFormOpen(true);
                 setStep(0);
               }}
-              className="text-sm font-semibold"
+              className="text-xs sm:text-sm font-semibold"
               style={{ color: NAVY }}
             >
               Edit details
@@ -1418,10 +1440,10 @@ export default function PropertyValuationPage() {
 
         {/* ── Results ──────────────────────────────── */}
         {result && (
-          <div className="mt-8 space-y-6">
+          <div className="mt-6 sm:mt-8 space-y-5 sm:space-y-6">
             {/* Headline total */}
             <div
-              className=" p-6 text-center sm:p-8"
+              className="rounded-lg p-4 text-center sm:p-8"
               style={{
                 borderColor: NAVY,
                 borderWidth: 2,
@@ -1429,19 +1451,19 @@ export default function PropertyValuationPage() {
               }}
             >
               <p
-                className="text-xs font-bold uppercase tracking-widest"
+                className="text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                 style={{ color: MUTED }}
               >
                 Total property value
               </p>
               <p
-                className="mt-2 font-serif text-4xl font-bold sm:text-5xl"
+                className="mt-2 font-serif text-2xl sm:text-4xl md:text-5xl font-bold break-words"
                 style={{ color: NAVY }}
               >
                 {formatNPR(result.finalValue)}
               </p>
               <div
-                className="mx-auto mt-5 grid max-w-md grid-cols-2 gap-4 border-t pt-5"
+                className="mx-auto mt-4 sm:mt-5 grid max-w-md grid-cols-2 gap-3 sm:gap-4 border-t pt-4 sm:pt-5"
                 style={{ borderColor: BORDER }}
               >
                 <SummaryAmount
@@ -1458,15 +1480,15 @@ export default function PropertyValuationPage() {
                   border
                 />
               </div>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row flex-wrap justify-center gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setIsReportOpen(true)}
-                  className="bg-gold-gradient  px-6 py-2.5 text-sm font-bold shadow transition hover:opacity-90 flex items-center gap-2"
+                  className="bg-gold-gradient rounded px-4 sm:px-6 py-2.5 text-xs sm:text-sm font-bold shadow transition hover:opacity-90 flex items-center justify-center gap-2"
                   style={{ color: NAVY }}
                 >
                   <svg
-                    className="h-4 w-4"
+                    className="h-4 w-4 shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1487,7 +1509,7 @@ export default function PropertyValuationPage() {
                       `/auction-analysis?amount=${result.finalValue}&id=${encodeURIComponent(result.propertyId)}`,
                     )
                   }
-                  className=" border px-5 py-2.5 text-sm font-bold transition hover:bg-[#f7f3ea]"
+                  className="rounded border px-5 py-2.5 text-xs sm:text-sm font-bold transition hover:bg-[#f7f3ea]"
                   style={{ borderColor: BORDER, color: NAVY }}
                 >
                   See auction estimate →
@@ -1497,17 +1519,17 @@ export default function PropertyValuationPage() {
 
             {/* Full calculation sheet */}
             <details
-              className=" border bg-white"
+              className="rounded border bg-white"
               style={{ borderColor: BORDER }}
             >
               <summary
-                className="cursor-pointer select-none px-6 py-4 text-sm font-semibold"
+                className="cursor-pointer select-none px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold"
                 style={{ color: TEXT }}
               >
                 Show the full calculation sheet
               </summary>
 
-              <div className="space-y-6 px-1 pb-6 sm:px-2">
+              <div className="space-y-5 sm:space-y-6 px-1 pb-5 sm:pb-6 sm:px-2">
                 {/* Land section */}
                 <ResultSection
                   number="1"
@@ -1515,10 +1537,10 @@ export default function PropertyValuationPage() {
                   description="How the adopted land rate and total land value were worked out."
                 >
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-140 text-sm">
+                    <table className="w-full min-w-140 text-xs sm:text-sm">
                       <thead>
                         <tr
-                          className="text-left text-xs font-semibold uppercase tracking-wide"
+                          className="text-left text-[10px] sm:text-xs font-semibold uppercase tracking-wide"
                           style={{ backgroundColor: "#f8f1e3", color: NAVY }}
                         >
                           {[
@@ -1530,7 +1552,7 @@ export default function PropertyValuationPage() {
                           ].map((h) => (
                             <th
                               key={h}
-                              className="border px-4 py-3"
+                              className="border px-2.5 sm:px-4 py-2 sm:py-3"
                               style={{ borderColor: BORDER }}
                             >
                               {h}
@@ -1556,7 +1578,7 @@ export default function PropertyValuationPage() {
                   </div>
 
                   <div
-                    className="mt-5 grid border sm:grid-cols-2"
+                    className="mt-4 sm:mt-5 grid border sm:grid-cols-2"
                     style={{ borderColor: BORDER }}
                   >
                     <ValueSummary
@@ -1581,7 +1603,7 @@ export default function PropertyValuationPage() {
                     <>
                       {/* Score summary */}
                       <div
-                        className="grid gap-px overflow-hidden  border sm:grid-cols-3"
+                        className="grid gap-px overflow-hidden rounded border sm:grid-cols-3"
                         style={{ borderColor: BORDER }}
                       >
                         <Metric
@@ -1604,18 +1626,18 @@ export default function PropertyValuationPage() {
 
                       {/* Amenities */}
                       <div
-                        className="mt-6 overflow-hidden  border"
+                        className="mt-5 sm:mt-6 overflow-hidden rounded border"
                         style={{ borderColor: BORDER }}
                       >
                         <div
-                          className="border-b px-4 py-3"
+                          className="border-b px-3 sm:px-4 py-2.5 sm:py-3"
                           style={{
                             borderColor: BORDER,
                             backgroundColor: "#f8f1e3",
                           }}
                         >
                           <p
-                            className="text-xs font-bold uppercase tracking-widest"
+                            className="text-[10px] sm:text-xs font-bold uppercase tracking-widest"
                             style={{ color: NAVY }}
                           >
                             Property factors
@@ -1706,14 +1728,14 @@ export default function PropertyValuationPage() {
 
                       {/* Explanation */}
                       <div
-                        className="mt-5  border-l-4 px-4 py-3"
+                        className="mt-4 sm:mt-5 rounded border-l-4 px-3 sm:px-4 py-2.5 sm:py-3"
                         style={{
                           borderColor: NAVY,
                           backgroundColor: "#faf8f3",
                         }}
                       >
                         <p
-                          className="text-xs leading-relaxed"
+                          className="text-[11px] sm:text-xs leading-relaxed"
                           style={{ color: MUTED }}
                         >
                           The amenity assessment is applied to the market rate
@@ -1725,7 +1747,7 @@ export default function PropertyValuationPage() {
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm" style={{ color: MUTED }}>
+                    <p className="text-xs sm:text-sm" style={{ color: MUTED }}>
                       No property amenity information was provided.
                     </p>
                   )}
@@ -1761,11 +1783,11 @@ export default function PropertyValuationPage() {
                           />
                         </div>
 
-                        <div className="mt-6 overflow-x-auto">
-                          <table className="w-full min-w-[500px] text-sm">
+                        <div className="mt-5 sm:mt-6 overflow-x-auto">
+                          <table className="w-full min-w-[500px] text-xs sm:text-sm">
                             <thead>
                               <tr
-                                className="text-left text-xs font-semibold uppercase tracking-wide"
+                                className="text-left text-[10px] sm:text-xs font-semibold uppercase tracking-wide"
                                 style={{
                                   backgroundColor: "#f8f1e3",
                                   color: NAVY,
@@ -1780,7 +1802,7 @@ export default function PropertyValuationPage() {
                                 ].map((h) => (
                                   <th
                                     key={h}
-                                    className="border px-4 py-3"
+                                    className="border px-2.5 sm:px-4 py-2 sm:py-3"
                                     style={{ borderColor: BORDER }}
                                   >
                                     {h}
@@ -1796,7 +1818,7 @@ export default function PropertyValuationPage() {
                                   style={{ borderColor: BORDER }}
                                 >
                                   <td
-                                    className="border px-4 py-3"
+                                    className="border px-2.5 sm:px-4 py-2 sm:py-3"
                                     style={{
                                       borderColor: BORDER,
                                       color: MUTED,
@@ -1805,25 +1827,25 @@ export default function PropertyValuationPage() {
                                     {index + 1}
                                   </td>
                                   <td
-                                    className="border px-4 py-3 font-medium"
+                                    className="border px-2.5 sm:px-4 py-2 sm:py-3 font-medium"
                                     style={{ borderColor: BORDER }}
                                   >
                                     {floor.floor}
                                   </td>
                                   <td
-                                    className="border px-4 py-3 text-right"
+                                    className="border px-2.5 sm:px-4 py-2 sm:py-3 text-right"
                                     style={{ borderColor: BORDER }}
                                   >
                                     {formatNumber(floor.area)}
                                   </td>
                                   <td
-                                    className="border px-4 py-3 text-right"
+                                    className="border px-2.5 sm:px-4 py-2 sm:py-3 text-right"
                                     style={{ borderColor: BORDER }}
                                   >
                                     {formatNPR(floor.ratePerSqft)}
                                   </td>
                                   <td
-                                    className="border px-4 py-3 text-right font-semibold"
+                                    className="border px-2.5 sm:px-4 py-2 sm:py-3 text-right font-semibold"
                                     style={{ borderColor: BORDER }}
                                   >
                                     {formatNPR(floor.cost)}
@@ -1834,7 +1856,7 @@ export default function PropertyValuationPage() {
                           </table>
                         </div>
 
-                        <div className="mt-6 grid gap-px sm:grid-cols-3">
+                        <div className="mt-5 sm:mt-6 grid gap-px sm:grid-cols-3">
                           <Metric
                             label={`Sanitary (${formatPercent(buildingResult.sanitary.rate)})`}
                             value={formatNPR(buildingResult.sanitary.cost)}
@@ -1859,7 +1881,7 @@ export default function PropertyValuationPage() {
                         description="How building depreciation was applied."
                       >
                         <div className="overflow-x-auto">
-                          <table className="w-full min-w-[500px] text-sm">
+                          <table className="w-full min-w-[500px] text-xs sm:text-sm">
                             <tbody>
                               <DetailRow
                                 label="Building age"
@@ -1912,7 +1934,7 @@ export default function PropertyValuationPage() {
 
                 {/* Footer meta */}
                 <div
-                  className="grid gap-3 border-t px-4 pt-5 text-xs sm:grid-cols-3"
+                  className="grid gap-3 border-t px-3 sm:px-4 pt-4 sm:pt-5 text-[11px] sm:text-xs sm:grid-cols-3"
                   style={{ borderColor: BORDER, color: MUTED }}
                 >
                   <div>
@@ -1959,16 +1981,19 @@ function AmenityResult({
   positive?: boolean;
 }) {
   return (
-    <div className="border-b p-4 sm:border-r" style={{ borderColor: BORDER }}>
+    <div
+      className="border-b p-3 sm:p-4 sm:border-r"
+      style={{ borderColor: BORDER }}
+    >
       <p
-        className="text-[11px] font-semibold uppercase tracking-wide"
+        className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wide"
         style={{ color: MUTED }}
       >
         {label}
       </p>
 
       <p
-        className="mt-1.5 text-sm font-semibold"
+        className="mt-1.5 text-xs sm:text-sm font-semibold"
         style={{
           color:
             positive === true

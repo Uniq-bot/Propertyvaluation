@@ -29,7 +29,7 @@ export interface Building {
 
 export interface PropertyInput {
   propertyId: string;
-
+  ownerDetails:OwnerDetail
   location: Location;
 
   landAreaAana: number;
@@ -129,6 +129,10 @@ export interface BuildingResult {
 
 export interface ValuationResult {
   propertyId: string;
+  ownerDetails:OwnerDetail,
+  valuatorDetail:{
+    valuatorName:string,
+  },
   valuationMethod: {
     land: string;
     building: string;
@@ -149,6 +153,12 @@ export interface ValuationResult {
     file:File,
     type:string
   }[];
+}
+
+export interface OwnerDetail{
+  ownerName:string;
+  ownerNumber:number;
+  ownerLocation:string
 }
 
 export type PropertyImageType = "satellite" | "trace" | "physical";
