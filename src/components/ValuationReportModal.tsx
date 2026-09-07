@@ -80,11 +80,10 @@ export function ValuationReportModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="bg-gold-gradient inline-flex items-center gap-1.5 sm:gap-2 -3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-[#10151f] transition hover:opacity-90 shadow-sm"
+              className="bg-gold-gradient inline-flex items-center gap-1.5 sm:gap-2 -3 sm:px-5 py-1.5 sm:py-2 text-xs px-5 sm:text-sm font-bold text-[#10151f] transition hover:opacity-90 shadow-sm"
             >
               <Printer className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Print / Save PDF</span>
-              <span className="xs:hidden">Print</span>
+              <span className="xs:hidden ">Print</span>
             </button>
             <button
               type="button"
@@ -148,15 +147,15 @@ export function ValuationReportModal({
                   alt="Property"
                   width={900}
                   height={550}
-                  className="h-70 sm:h-87.5 md:h-100 w-full  object-cover"
+                  className="h-50 sm:h-87.5 md:h-100 w-full  object-cover"
                 />
               </div>
             </div>
 
             {/* Property Details */}
-            <div className="mt-10 w-full max-w-2xl">
+            <div className="mt-5 md:mt-10 w-full max-w-2xl">
               <div className=" border border-[#e8dfc8] bg-[#fcfbf8] p-6 sm:p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-7">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">
                   {/* Owner */}
                   <div>
                     <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#8a5a00]">
