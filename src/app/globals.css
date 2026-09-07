@@ -77,3 +77,14 @@ input[type="number"] { -moz-appearance: textfield; }
 
 /* range slider */
 input[type="range"] { accent-color: var(--gold); }
+
+
+.below::after{
+  content: "";
+  display: block;
+  width: 80%;
+  margin: auto; 
+  margin-top: 0.5rem;
+  height: 2px;
+  background-color: var(--gold);
+}

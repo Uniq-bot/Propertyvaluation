@@ -19,8 +19,9 @@ import {
   Droplets,
   Zap,
   Car,
-  Image,
+  Image as img,
 } from "lucide-react";
+import Image from "next/image";
 
 interface ValuationReportModalProps {
   isOpen: boolean;
@@ -53,14 +54,20 @@ export function ValuationReportModal({
     window.print();
   };
 
+  const physicalImage = property.images?.find(
+    (img) => img.type === "physical",
+  )?.file;
+
+  const propertyImage = physicalImage
+    ? URL.createObjectURL(physicalImage)
+    : "/image.png";
   const modal = (
     <div
       id="valuation-report-root"
       className="report-modal-backdrop fixed inset-0 z-50 flex  items-start justify-center overflow-y-auto bg-black/60 p-2 sm:p-6"
     >
       {/* Modal Container */}
-      <div className="report-modal-content relative my-4 sm:my-8 w-full max-w-4xl rounded bg-white shadow-2xl overflow-hidden text-[#10151f]">
-          
+      <div className="report-modal-content relative my-4 sm:my-8 w-full max-w-4xl -white shadow-2xl overflow-hidden text-[#10151f]">
         {/* Top Action Bar (Screen Only) */}
         <div className="no-print sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-[#e8dfc8] bg-white px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2">
@@ -73,7 +80,7 @@ export function ValuationReportModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="bg-gold-gradient inline-flex items-center gap-1.5 sm:gap-2 rounded px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-[#10151f] transition hover:opacity-90 shadow-sm"
+              className="bg-gold-gradient inline-flex items-center gap-1.5 sm:gap-2 -3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-bold text-[#10151f] transition hover:opacity-90 shadow-sm"
             >
               <Printer className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span className="hidden xs:inline">Print / Save PDF</span>
@@ -82,7 +89,7 @@ export function ValuationReportModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded border border-[#e8dfc8] bg-white p-1.5 sm:p-2 text-[#475569] hover:bg-[#f7f3ea] transition"
+              className=" border-[#e8dfc8] bg-white p-1.5 sm:p-2 text-[#475569] hover:bg-[#f7f3ea] transition"
               aria-label="Close"
             >
               <X className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -90,15 +97,117 @@ export function ValuationReportModal({
           </div>
         </div>
         {/* cover page */}
-        <div className="w-full h-screen">
-          <nav className="w-full  px-6 sm:py-6 sm:px-10  bg-[#f7f3ea]">
-            <h1>
-              EkPratishat Real Estate
-            </h1>
-            <p>
-              Property Valuation and Consultancy
-            </p>
+        <div className="w-full min-h-screen bg-white text-[#10151f] font-serif">
+          {/* Header */}
+          <nav className="w-full px-6 py-6 sm:px-10 sm:py-5 border-b border-[#e8dfc8]">
+            <div className="flex items-center gap-4">
+              <Image
+                src="/image.png"
+                alt="EkPratishat Logo"
+                width={100}
+                height={100}
+                className="h-16 w-24 sm:h-20 sm:w-28 object-contain"
+              />
+
+              <div className="border-l border-[#d6c69a] pl-4">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
+                  EkPratishat Real Estate
+                </h1>
+
+                <p className="mt-1 text-xs sm:text-sm md:text-base text-[#64748b] font-sans tracking-wide">
+                  Property Valuation and Consultancy
+                </p>
+              </div>
+            </div>
           </nav>
+
+          {/* Cover Content */}
+          <main className="flex flex-col items-center px-6 py-7 sm:px-10 sm:py-5">
+            {/* Report Title */}
+            <div className="text-center">
+              <p className="font-sans text-xs sm:text-sm uppercase tracking-[0.3em] text-[#8a5a00]">
+                Valuation Report
+              </p>
+
+              <h1 className="mt-3 text-2xl sm:text-3xl md:text-4xl font-medium">
+                Report on
+              </h1>
+
+              <h2 className="mt-1 text-3xl sm:text-4xl md:text-5xl font-bold">
+                Property Valuation
+              </h2>
+
+              <div className="mx-auto mt-5 h-1 w-16  bg-[#f1c810]" />
+            </div>
+
+            {/* Property Image */}
+            <div className="mt-10 w-full max-w-2xl">
+              <div className="overflow-hidden  border border-[#e8dfc8] bg-[#f8f7f3]  shadow-sm">
+                <Image
+                  src={propertyImage}
+                  alt="Property"
+                  width={900}
+                  height={550}
+                  className="h-70 sm:h-87.5 md:h-100 w-full  object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Property Details */}
+            <div className="mt-10 w-full max-w-2xl">
+              <div className=" border border-[#e8dfc8] bg-[#fcfbf8] p-6 sm:p-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-7">
+                  {/* Owner */}
+                  <div>
+                    <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#8a5a00]">
+                      Owner Name
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-[#10151f]">
+                      {property.ownerDetails.ownerName}
+                    </p>
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#8a5a00]">
+                      Property Address
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-[#10151f]">
+                      {property.location.municipality},{" "}
+                      {property.location.district}
+                    </p>
+                  </div>
+
+                  {/* Prepared By */}
+                  <div>
+                    <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#8a5a00]">
+                      Prepared By
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-[#10151f]">
+                      {result.valuatorDetail.valuatorName}
+                    </p>
+                  </div>
+
+                  {/* Date */}
+                  <div>
+                    <p className="font-sans text-[11px] uppercase tracking-[0.18em] text-[#8a5a00]">
+                      Date of Valuation
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-[#10151f]">
+                      {currentDate}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-12 text-center">
+              <p className="font-sans text-xs text-[#94a3b8]">
+                Prepared for professional property valuation purposes
+              </p>
+            </div>
+          </main>
         </div>
         {/* Printable Report Document Body */}
         <div className="p-4 sm:p-10 space-y-6 sm:space-y-8 bg-white">
@@ -107,7 +216,7 @@ export function ValuationReportModal({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full bg-red-600" />
+                  <div className="h-2.5 w-2.5 sm:h-3 sm:w-3  bg-red-600" />
                   <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#475569]">
                     Bagmati Province · Nepal Real Estate Appraisal
                   </span>
@@ -121,7 +230,7 @@ export function ValuationReportModal({
               </div>
 
               <div className="text-left sm:text-right border-l-2 sm:border-l-0 sm:border-r-2 border-[#d6a936] pl-3 sm:pl-0 sm:pr-3">
-                <div className="inline-flex items-center gap-1.5 rounded bg-[#fdf6dc] border border-[#e5c87a] px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-[#8a5a00]">
+                <div className="inline-flex items-center gap-1.5 -[#fdf6dc] border border-[#e5c87a] px-2.5 sm:px-3 py-1 text-[10px] sm:text-xs font-bold text-[#8a5a00]">
                   <ShieldCheck className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   VERIFIED & COMPLETED
                 </div>
@@ -136,13 +245,13 @@ export function ValuationReportModal({
           </div>
 
           {/* Executive Summary Box */}
-          <div className="rounded border-2 border-[#10151f] bg-[#fffdf8] p-4 sm:p-6 shadow-sm">
+          <div className="-2 border-[#10151f] bg-[#fffdf8] p-4 sm:p-6 shadow-sm">
             <div className="text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
               <div>
                 <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#475569]">
                   Total Appraised Property Value
                 </p>
-                <p className="font-serif text-xl sm:text-3xl md:text-4xl font-extrabold text-[#10151f] mt-1 break-words">
+                <p className="font-serif text-xl sm:text-3xl md:text-4xl font-extrabold text-[#10151f] mt-1 wrap-break-word">
                   {formatNPR(result.finalValue)}
                 </p>
                 <p className="text-[11px] sm:text-xs text-[#64748b] mt-1">
@@ -154,7 +263,7 @@ export function ValuationReportModal({
                   <p className="text-[11px] sm:text-xs font-semibold text-[#475569]">
                     Land Component
                   </p>
-                  <p className="font-serif text-sm sm:text-lg font-bold text-[#10151f] break-words">
+                  <p className="font-serif text-sm sm:text-lg font-bold text-[#10151f] wrap-break-word">
                     {formatNPR(result.land.landValue)}
                   </p>
                 </div>
@@ -162,7 +271,7 @@ export function ValuationReportModal({
                   <p className="text-[11px] sm:text-xs font-semibold text-[#475569]">
                     Building Component
                   </p>
-                  <p className="font-serif text-sm sm:text-lg font-bold text-[#10151f] break-words">
+                  <p className="font-serif text-sm sm:text-lg font-bold text-[#10151f] wrap-break-word">
                     {buildingResult
                       ? formatNPR(buildingResult.presentBuildingValue)
                       : "N/A (Land Only)"}
@@ -178,7 +287,7 @@ export function ValuationReportModal({
               <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
               Property Location & General Details
             </h2>
-            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 rounded bg-[#f7f3ea] p-3 sm:p-4 text-[11px] sm:text-xs">
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 -[#f7f3ea] p-3 sm:p-4 text-[11px] sm:text-xs">
               <div>
                 <span className="block font-semibold text-[#475569]">
                   District
@@ -227,7 +336,7 @@ export function ValuationReportModal({
             </p>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[480px] text-[11px] sm:text-xs text-left border border-[#e8dfc8]">
+              <table className="w-full min-w-120 text-[11px] sm:text-xs text-left border border-[#e8dfc8]">
                 <thead className="bg-[#f8f1e3] text-[#10151f] font-semibold border-b border-[#e8dfc8]">
                   <tr>
                     <th className="p-2 sm:p-2.5 border-r border-[#e8dfc8]">
@@ -337,7 +446,7 @@ export function ValuationReportModal({
 
             {/* Amenity score */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              <div className="rounded border border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
+              <div className=" border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
                 <span className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-[#64748b]">
                   Amenity Score
                 </span>
@@ -352,7 +461,7 @@ export function ValuationReportModal({
                 </div>
               </div>
 
-              <div className="rounded border border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
+              <div className=" border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
                 <span className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-[#64748b]">
                   Market Adjustment
                 </span>
@@ -369,12 +478,12 @@ export function ValuationReportModal({
                 </span>
               </div>
 
-              <div className="rounded border border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
+              <div className=" border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
                 <span className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-[#64748b]">
                   Adjusted Market Rate
                 </span>
 
-                <span className="mt-1 block font-serif text-base sm:text-xl font-bold text-[#10151f] break-words">
+                <span className="mt-1 block font-serif text-base sm:text-xl font-bold text-[#10151f] wrap-break-word">
                   {formatNPR(result.land.inputs.marketRate)}
                   <span className="ml-1 text-[11px] sm:text-xs font-normal text-[#64748b]">
                     / Aana
@@ -384,7 +493,7 @@ export function ValuationReportModal({
             </div>
 
             {/* Amenity details */}
-            <div className="overflow-hidden rounded border border-[#e8dfc8]">
+            <div className="overflow-hidden  border-[#e8dfc8]">
               <div className="grid grid-cols-2 sm:grid-cols-3">
                 <AmenityReportItem
                   icon={<Route className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
@@ -463,7 +572,7 @@ export function ValuationReportModal({
               </div>
             </div>
 
-            <div className="mt-3 rounded bg-[#f7f3ea] px-3 py-2.5 text-[10px] sm:text-[11px] leading-relaxed text-[#475569]">
+            <div className="mt-3 -[#f7f3ea] px-3 py-2.5 text-[10px] sm:text-[11px] leading-relaxed text-[#475569]">
               <strong className="text-[#10151f]">Assessment note:</strong>{" "}
               Property amenities are used to adjust the prevailing market land
               rate. The government valuation rate remains unchanged.
@@ -476,7 +585,7 @@ export function ValuationReportModal({
               <div className="mb-4 flex items-end justify-between border-b-2 border-[#10151f] pb-2">
                 <div>
                   <h2 className="flex items-center gap-2 font-serif text-base sm:text-xl font-bold text-[#10151f]">
-                    <Image className="h-4 w-4 sm:h-5 sm:w-5 text-[#8a5a00]" />
+                    <img className="h-4 w-4 sm:h-5 sm:w-5 text-[#8a5a00]" />
                     Property Images
                   </h2>
 
@@ -496,7 +605,7 @@ export function ValuationReportModal({
                 {property.images.map((img, idx) => (
                   <div
                     key={`${img.type}-${idx}`}
-                    className="overflow-hidden rounded border border-[#d9d0bc] bg-white print:break-inside-avoid"
+                    className="overflow-hidden  border-[#d9d0bc] bg-white print:break-inside-avoid"
                   >
                     {/* Image Header */}
                     <div className="flex items-center justify-between border-b border-[#e8dfc8] bg-[#faf8f2] px-3 py-2">
@@ -510,7 +619,7 @@ export function ValuationReportModal({
                         </p>
                       </div>
 
-                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full bg-[#10151f] text-[9px] sm:text-[10px] font-semibold text-white">
+                      <span className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center  bg-[#10151f] text-[9px] sm:text-[10px] font-semibold text-white">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
                     </div>
@@ -614,7 +723,7 @@ export function ValuationReportModal({
                 </table>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#f7f3ea] p-3 sm:p-4 rounded text-[11px] sm:text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#f7f3ea] p-3 sm:p-4 -[11px] sm:text-xs">
                 <div>
                   <span className="block text-[#475569]">
                     Sanitary Installation (
@@ -643,7 +752,7 @@ export function ValuationReportModal({
                 </div>
               </div>
 
-              <div className="mt-4 border border-[#e8dfc8] rounded p-3 sm:p-4 bg-[#fffdf8]">
+              <div className="mt-4 border border-[#e8dfc8] -3 sm:p-4 bg-[#fffdf8]">
                 <h3 className="font-semibold text-[11px] sm:text-xs text-[#10151f] mb-2 uppercase tracking-wide">
                   Depreciation Statement
                 </h3>
@@ -674,7 +783,7 @@ export function ValuationReportModal({
                       -{formatNPR(buildingResult.depreciation.amount)}
                     </span>
                   </div>
-                  <div className="col-span-2 sm:col-span-1 bg-[#f8f1e3] p-2 rounded-r">
+                  <div className="col-span-2 sm:col-span-1 bg-[#f8f1e3] p-2 ">
                     <span className="block text-[#8a5a00] font-semibold">
                       Net Present Value
                     </span>
@@ -686,7 +795,7 @@ export function ValuationReportModal({
               </div>
             </div>
           ) : (
-            <div className="rounded border border-dashed border-[#e8dfc8] p-3 sm:p-4 text-[11px] sm:text-xs text-[#475569]">
+            <div className=" border-dashed border-[#e8dfc8] p-3 sm:p-4 text-[11px] sm:text-xs text-[#475569]">
               <strong>Building Valuation:</strong> No structure included in this
               appraisal. Valuated as vacant land plot.
             </div>
@@ -699,7 +808,7 @@ export function ValuationReportModal({
               Distress Sale & Auction Liquidation Forecast
             </h2>
             <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3 text-center text-[10px] sm:text-xs">
-              <div className="rounded border border-[#fecaca] bg-[#fef2f2] p-2 sm:p-3">
+              <div className=" border-[#fecaca] bg-[#fef2f2] p-2 sm:p-3">
                 <span className="block text-[#b91c1c] font-semibold">
                   Conservative (60%)
                 </span>
@@ -707,7 +816,7 @@ export function ValuationReportModal({
                   {formatNPR(Math.round(result.finalValue * 0.6))}
                 </span>
               </div>
-              <div className="rounded border border-[#e5c87a] bg-[#fdf6dc] p-2 sm:p-3">
+              <div className=" border-[#e5c87a] bg-[#fdf6dc] p-2 sm:p-3">
                 <span className="block text-[#8a5a00] font-semibold">
                   Expected (70%)
                 </span>
@@ -715,7 +824,7 @@ export function ValuationReportModal({
                   {formatNPR(Math.round(result.finalValue * 0.7))}
                 </span>
               </div>
-              <div className="rounded border border-[#bbf7d0] bg-[#f0fdf4] p-2 sm:p-3">
+              <div className=" border-[#bbf7d0] bg-[#f0fdf4] p-2 sm:p-3">
                 <span className="block text-green-700 font-semibold">
                   Optimistic (80%)
                 </span>
@@ -756,7 +865,7 @@ export function ValuationReportModal({
               </div>
 
               <div className="col-span-2 sm:col-span-1 flex flex-col justify-end items-center sm:items-end">
-                <div className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-dashed border-[#d6a936] rounded-full flex items-center justify-center text-[9px] sm:text-[10px] text-[#8a5a00] font-bold text-center p-2">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 border-2 border-dashed border-[#d6a936]  flex items-center justify-center text-[9px] sm:text-[10px] text-[#8a5a00] font-bold text-center p-2">
                   OFFICIAL VALUATION STAMP
                 </div>
               </div>
