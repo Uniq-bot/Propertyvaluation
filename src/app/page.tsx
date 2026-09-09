@@ -48,7 +48,7 @@ export default function Home() {
 
               {/* Heading */}
               <h1
-                className="max-w-2xl font-serif text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
+                className="max-w-2xl font-[PoppinsBlack]] text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
                 style={{ color: CHARCOAL }}
               >
                 Know the real value
@@ -173,7 +173,7 @@ export default function Home() {
                       </p>
 
                       <p
-                        className="mt-1.5 font-serif text-xl font-bold"
+                        className="mt-1.5 font-[PoppinsBlack]] text-xl font-bold"
                         style={{ color: CHARCOAL }}
                       >
                         Property Assessment
@@ -203,7 +203,7 @@ export default function Home() {
 
                   <div className="mt-1 flex items-end gap-2">
                     <span
-                      className="font-serif text-4xl font-bold sm:text-5xl"
+                      className="font-[PoppinsBlack]] text-4xl font-bold sm:text-5xl"
                       style={{ color: CHARCOAL }}
                     >
                       Rs. 2.45 Cr
@@ -353,7 +353,7 @@ export default function Home() {
             </p>
 
             <h2
-              className="mt-2 font-serif text-3xl font-bold sm:text-4xl"
+              className="mt-2 font-[PoppinsBlack]] text-3xl font-bold sm:text-4xl"
               style={{ color: CHARCOAL }}
             >
               From property details to valuation in three steps.
@@ -446,7 +446,7 @@ export default function Home() {
               </p>
 
               <h2
-                className="mt-2 font-serif text-3xl font-bold sm:text-4xl"
+                className="mt-2 font-[PoppinsBlack]] text-3xl font-bold sm:text-4xl"
                 style={{ color: CHARCOAL }}
               >
                 A transparent approach to property valuation.
@@ -661,7 +661,7 @@ export default function Home() {
                 Ready when you are
               </p>
 
-              <h2 className="mt-3 font-serif text-4xl font-bold leading-tight text-white sm:text-5xl">
+              <h2 className="mt-3 font-[PoppinsBlack]] text-4xl font-bold leading-tight text-white sm:text-5xl">
                 Find out what your property is worth.
               </h2>
 

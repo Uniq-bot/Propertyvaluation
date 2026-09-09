@@ -14,12 +14,9 @@ import {
   TrendingUp,
   Calendar,
   FileText,
-  Route,
   LandPlot,
-  Droplets,
-  Zap,
-  Car,
-  Image as img,
+  Image as Img,
+  Summary,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -48,7 +45,7 @@ export function ValuationReportModal({
     day: "numeric",
   });
 
-  const landAreaSqft = property.landAreaAana * 342.25;
+  const landAreaSqft = result.landAreaAana * 342.25;
 
   const handlePrint = () => {
     window.print();
@@ -72,7 +69,7 @@ export function ValuationReportModal({
         <div className="no-print sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-[#e8dfc8] bg-white px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-[#8a5a00]" />
-            <span className="font-serif text-sm sm:text-lg font-bold text-[#10151f]">
+            <span className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f]">
               Valuation Report Preview
             </span>
           </div>
@@ -96,7 +93,7 @@ export function ValuationReportModal({
           </div>
         </div>
         {/* cover page */}
-        <div className="w-full min-h-screen bg-white text-[#10151f] font-serif">
+        <div className="w-full min-h-screen bg-white text-[#10151f] font-[PoppinsRegular]">
           {/* Header */}
           <nav className="w-full px-6 py-6 sm:px-10 sm:py-5 border-b border-[#e8dfc8]">
             <div className="flex items-center gap-4">
@@ -208,6 +205,16 @@ export function ValuationReportModal({
             </div>
           </main>
         </div>
+        {/* table of contents */}
+        <div className="p-4 h-screen sm:p-10 space-y-6 sm:space-y-8 bg-white">
+          <h2 className="text-xl font-bold text-[#10151f]">Table of Contents</h2>
+          <ul className="list-disc pl-5 space-y-2">
+            <li className="text-[#10151f]">Executive Summary</li>
+            <li className="text-[#10151f]">Property Details</li>
+            <li className="text-[#10151f]">Valuation Methodology</li>
+            <li className="text-[#10151f]">Conclusion</li>
+          </ul>
+        </div>
         {/* Printable Report Document Body */}
         <div className="p-4 sm:p-10 space-y-6 sm:space-y-8 bg-white">
           {/* Header & Emblem */}
@@ -220,7 +227,7 @@ export function ValuationReportModal({
                     Bagmati Province · Nepal Real Estate Appraisal
                   </span>
                 </div>
-                <h1 className="font-serif text-lg sm:text-2xl md:text-3xl font-extrabold text-[#10151f] mt-1">
+                <h1 className="font-[PoppinsRegular] text-lg sm:text-2xl md:text-3xl font-extrabold text-[#10151f] mt-1">
                   PROPERTY VALUATION REPORT
                 </h1>
                 <p className="text-[11px] sm:text-xs text-[#64748b] mt-0.5">
@@ -250,7 +257,7 @@ export function ValuationReportModal({
                 <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#475569]">
                   Total Appraised Property Value
                 </p>
-                <p className="font-serif text-xl sm:text-3xl md:text-4xl font-extrabold text-[#10151f] mt-1 wrap-break-word">
+                <p className="font-[PoppinsRegular] text-xl sm:text-3xl md:text-4xl font-extrabold text-[#10151f] mt-1 wrap-break-word">
                   {formatNPR(result.finalValue)}
                 </p>
                 <p className="text-[11px] sm:text-xs text-[#64748b] mt-1">
@@ -262,7 +269,7 @@ export function ValuationReportModal({
                   <p className="text-[11px] sm:text-xs font-semibold text-[#475569]">
                     Land Component
                   </p>
-                  <p className="font-serif text-sm sm:text-lg font-bold text-[#10151f] wrap-break-word">
+                  <p className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] wrap-break-word">
                     {formatNPR(result.land.landValue)}
                   </p>
                 </div>
@@ -270,7 +277,7 @@ export function ValuationReportModal({
                   <p className="text-[11px] sm:text-xs font-semibold text-[#475569]">
                     Building Component
                   </p>
-                  <p className="font-serif text-sm sm:text-lg font-bold text-[#10151f] wrap-break-word">
+                  <p className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] wrap-break-word">
                     {buildingResult
                       ? formatNPR(buildingResult.presentBuildingValue)
                       : "N/A (Land Only)"}
@@ -282,7 +289,7 @@ export function ValuationReportModal({
 
           {/* Property Location & Specification */}
           <div>
-            <h2 className="font-serif text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
+            <h2 className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
               <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
               Property Location & General Details
             </h2>
@@ -316,7 +323,7 @@ export function ValuationReportModal({
                   Land Area
                 </span>
                 <span className="font-bold text-[#10151f]">
-                  {formatNumber(property.landAreaAana)} Aana (
+                  {formatNumber(result.landAreaAana)} Aana (
                   {formatNumber(landAreaSqft)} sq.ft.)
                 </span>
               </div>
@@ -325,7 +332,7 @@ export function ValuationReportModal({
 
           {/* Section 2: Land Valuation Schedule */}
           <div>
-            <h2 className="font-serif text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
+            <h2 className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
               <Scale className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
               Land Valuation Breakdown (Weighted Average Method)
             </h2>
@@ -417,7 +424,7 @@ export function ValuationReportModal({
                       colSpan={2}
                       className="p-2 sm:p-2.5 border-r border-[#e8dfc8]"
                     >
-                      TOTAL LAND VALUE ({formatNumber(property.landAreaAana)}{" "}
+                      TOTAL LAND VALUE ({formatNumber(result.landAreaAana)}{" "}
                       Aana)
                     </td>
                     <td
@@ -433,7 +440,7 @@ export function ValuationReportModal({
           </div>
           {/* Section 3: Property Factors & Amenities */}
           <div>
-            <h2 className="font-serif text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
+            <h2 className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
               <LandPlot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
               Property Factors & Amenities
             </h2>
@@ -444,18 +451,18 @@ export function ValuationReportModal({
             </p>
 
             {/* Amenity score */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div className=" border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
                 <span className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-[#64748b]">
-                  Amenity Score
+                  Initial market rate
                 </span>
 
                 <div className="mt-1 flex items-end gap-1">
-                  <span className="font-serif text-xl sm:text-2xl font-bold text-[#10151f]">
-                    {Math.round(result.land.amenityScore ?? 0)}
+                  <span className="font-[PoppinsRegular] text-xl sm:text-2xl font-bold text-[#10151f]">
+                    {formatNPR(property.marketRate)}
                   </span>
                   <span className="mb-1 text-[11px] sm:text-xs text-[#64748b]">
-                    / 100
+                    / Aana
                   </span>
                 </div>
               </div>
@@ -466,7 +473,7 @@ export function ValuationReportModal({
                 </span>
 
                 <span
-                  className={`mt-1 block font-serif text-xl sm:text-2xl font-bold ${
+                  className={`mt-1 block font-[PoppinsRegular] text-xl sm:text-2xl font-bold ${
                     (result.land.amenityAdjustment ?? 0) >= 0
                       ? "text-green-700"
                       : "text-red-700"
@@ -482,93 +489,83 @@ export function ValuationReportModal({
                   Adjusted Market Rate
                 </span>
 
-                <span className="mt-1 block font-serif text-base sm:text-xl font-bold text-[#10151f] wrap-break-word">
+                <span className="mt-1 block font-[PoppinsRegular] text-base sm:text-xl font-bold text-[#10151f] wrap-break-word">
                   {formatNPR(result.land.inputs.marketRate)}
                   <span className="ml-1 text-[11px] sm:text-xs font-normal text-[#64748b]">
                     / Aana
                   </span>
                 </span>
               </div>
-            </div>
+            </div> */}
 
             {/* Amenity details */}
-            <div className="overflow-hidden  border-[#e8dfc8]">
-              <div className="grid grid-cols-2 sm:grid-cols-3">
-                <AmenityReportItem
-                  icon={<Route className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Road Width"
-                  value={`${property.structuralAmenities?.roadWidth ?? 0} ft`}
-                />
-                <AmenityReportItem
-                  icon={<Route className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Road Type"
-                  value={
-                    property.structuralAmenities?.roadType || "Not specified"
-                  }
-                />
-                <AmenityReportItem
-                  icon={<Route className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Road Condition"
-                  value={
-                    property.structuralAmenities?.roadCondition ||
-                    "Not specified"
-                  }
-                />
-                <AmenityReportItem
-                  icon={<LandPlot className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Land Shape"
-                  value={
-                    property.structuralAmenities?.landShape || "Not specified"
-                  }
-                />
-                <AmenityReportItem
-                  icon={<MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Land Facing"
-                  value={
-                    property.structuralAmenities?.landFacing || "Not specified"
-                  }
-                />
-                <AmenityReportItem
-                  icon={<Droplets className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Water Supply"
-                  value={
-                    property.structuralAmenities?.waterSupply
-                      ? "Available"
-                      : "Not available"
-                  }
-                  positive={property.structuralAmenities?.waterSupply}
-                />
-                <AmenityReportItem
-                  icon={<Droplets className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Drainage"
-                  value={
-                    property.structuralAmenities?.drainage
-                      ? "Available"
-                      : "Not available"
-                  }
-                  positive={property.structuralAmenities?.drainage}
-                />
-                <AmenityReportItem
-                  icon={<Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Electricity"
-                  value={
-                    property.structuralAmenities?.electricity
-                      ? "Available"
-                      : "Not available"
-                  }
-                  positive={property.structuralAmenities?.electricity}
-                />
-                <AmenityReportItem
-                  icon={<Car className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  label="Parking"
-                  value={
-                    property.structuralAmenities?.parkingAvailable
-                      ? "Available"
-                      : "Not available"
-                  }
-                  positive={property.structuralAmenities?.parkingAvailable}
-                />
-              </div>
+            <div className="mt-3 overflow-hidden border border-[#e8dfc8]">
+              {property.structuralAmenities &&
+              property.structuralAmenities.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-150 text-[10px] sm:text-xs">
+                    <thead className="bg-[#f8f1e3] border-b border-[#e8dfc8]">
+                      <tr>
+                        <th className="p-2.5 text-left font-bold text-[#10151f]">
+                          S.N.
+                        </th>
+
+                        <th className="p-2.5 text-left font-bold text-[#10151f]">
+                          Factor / Amenity
+                        </th>
+
+                        <th className="p-2.5 text-left font-bold text-[#10151f]">
+                          Observed Value
+                        </th>
+
+                        {/* <th className="p-2.5 text-right font-bold text-[#10151f]">
+                          Adjustment
+                        </th> */}
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-[#e8dfc8]">
+                      {property.structuralAmenities.map((amenity, index) => (
+                        <tr
+                          key={`${amenity.factor}-${index}`}
+                          className="hover:bg-[#faf8f3]"
+                        >
+                          {/* S.N. */}
+                          <td className="p-2.5 text-[#64748b]">{index + 1}</td>
+
+                          {/* Factor */}
+                          <td className="p-2.5 font-semibold text-[#10151f]">
+                            {amenity.factor || "Not specified"}
+                          </td>
+
+                          {/* Observed Value */}
+                          <td className="p-2.5 text-[#475569]">
+                            {amenity.observedValue || "Not specified"}
+                          </td>
+
+                          {/* Adjustment */}
+                          {/* <td
+                            className={`p-2.5 text-right font-bold ${
+                              Number(amenity.adjustment) > 0
+                                ? "text-green-700"
+                                : Number(amenity.adjustment) < 0
+                                  ? "text-red-700"
+                                  : "text-[#475569]"
+                            }`}
+                          >
+                            {Number(amenity.adjustment) > 0 ? "+" : ""}
+                            {Number(amenity.adjustment).toFixed(1)}%
+                          </td> */}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-4 text-xs text-[#64748b]">
+                  No property factors or amenities were provided.
+                </div>
+              )}
             </div>
 
             <div className="mt-3 -[#f7f3ea] px-3 py-2.5 text-[10px] sm:text-[11px] leading-relaxed text-[#475569]">
@@ -583,8 +580,8 @@ export function ValuationReportModal({
               {/* Section Header */}
               <div className="mb-4 flex items-end justify-between border-b-2 border-[#10151f] pb-2">
                 <div>
-                  <h2 className="flex items-center gap-2 font-serif text-base sm:text-xl font-bold text-[#10151f]">
-                    <img className="h-4 w-4 sm:h-5 sm:w-5 text-[#8a5a00]" />
+                  <h2 className="flex items-center gap-2 font-[PoppinsRegular] text-base sm:text-xl font-bold text-[#10151f]">
+                    <Img className="h-4 w-4 sm:h-5 sm:w-5 text-[#8a5a00]" />
                     Property Images
                   </h2>
 
@@ -610,11 +607,13 @@ export function ValuationReportModal({
                     <div className="flex items-center justify-between border-b border-[#e8dfc8] bg-[#faf8f2] px-3 py-2">
                       <div>
                         <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.12em] text-[#8a5a00]">
-                          {img.name}
+                          {img.type === "satellite" && "Satellite View"}
+                          {img.type === "trace" && "Trace View"}
+                          {img.type === "physical" && "Physical View"}
                         </p>
 
                         <p className="mt-0.5 text-[9px] sm:text-[10px] text-gray-400">
-                          Property documentation
+                          {img.name}
                         </p>
                       </div>
 
@@ -653,7 +652,7 @@ export function ValuationReportModal({
           {/* Section 4: Building & Depreciation Schedule (if applicable) */}
           {buildingResult ? (
             <div>
-              <h2 className="font-serif text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
+              <h2 className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
                 <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
                 Building Structure & Straight-Line Depreciation Schedule
               </h2>
@@ -710,7 +709,7 @@ export function ValuationReportModal({
                       >
                         Subtotal Civil Construction Cost
                       </td>
-                      <td className="p-2 sm:p-2.5 border-r border-[#e8dfc8] text-right">
+                      <td className="p-2 sm:p-2.5 border-r border-[#e8dfc8]  text-right">
                         {formatNumber(buildingResult.totalFloorArea)} sq.ft.
                       </td>
                       <td className="p-2 sm:p-2.5 border-r border-[#e8dfc8]"></td>
@@ -769,11 +768,14 @@ export function ValuationReportModal({
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[#475569]">Scrap Value</span>
+                    <span className="block text-[#475569]">
+                      Depriciation Rate
+                    </span>
                     <span className="font-bold text-[#10151f]">
-                      {formatPercent(buildingResult.depreciation.scrapValue)}
+                      {formatPercent(buildingResult.depreciation.annualRate)}
                     </span>
                   </div>
+
                   <div>
                     <span className="block text-[#475569]">
                       Depreciation Amount
@@ -799,10 +801,96 @@ export function ValuationReportModal({
               appraisal. Valuated as vacant land plot.
             </div>
           )}
-
-          {/* Section 5: Auction Liquidation Estimate */}
+          {/* Section 5: Building & Land total valuation */}
           <div>
-            <h2 className="font-serif text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
+            <h2 className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
+              <Summary className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
+              Summary of Land & Building Valuation
+            </h2>
+            <table className="w-full min-w-150 text-[10px] sm:text-xs">
+              <thead className="bg-[#f8f1e3] border-b border-[#e8dfc8]">
+                <tr>
+                  <th className="p-2.5 text-left font-bold text-[#10151f]">
+                    S.N.
+                  </th>
+
+                  <th className="p-2.5 text-left font-bold text-[#10151f]">
+                    Particulars
+                  </th>
+
+                  <th className="p-2.5 text-left font-bold text-[#10151f]">
+                    Fair market value (NPR)
+                  </th>
+
+                  <th className="p-2.5 text-left font-bold text-[#10151f]">
+                    Distress value by 80% (NPR)
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-[#e8dfc8]">
+                <tr className="hover:bg-[#faf8f3]">
+                  <td className="p-2.5 text-[#64748b]">1</td>
+
+                  <td className="p-2.5 font-semibold text-[#10151f]">
+                    Land Value
+                  </td>
+
+                  <td className="p-2.5 text-[#475569]">
+                    {result.land.landValue
+                      ? formatNPR(result.land.landValue)
+                      : "N/A"}
+                  </td>
+
+                  <td className="p-2.5 text-[#475569]">
+                    {result.land.landValue
+                      ? formatNPR(Math.round(result.land.landValue * 0.8))
+                      : "N/A"}
+                  </td>
+                </tr>
+                {buildingResult && (
+                  <tr className="hover:bg-[#faf8f3]">
+                    <td className="p-2.5 text-[#64748b]">2</td>
+
+                    <td className="p-2.5 font-semibold text-[#10151f]">
+                      Building Value
+                    </td>
+
+                    <td className="p-2.5 text-[#475569]">
+                      {buildingResult.presentBuildingValue
+                        ? formatNPR(buildingResult.presentBuildingValue)
+                        : "N/A"}
+                    </td>
+
+                    <td className="p-2.5 text-[#475569]">
+                      {buildingResult.presentBuildingValue
+                        ? formatNPR(
+                            Math.round(
+                              buildingResult.presentBuildingValue * 0.8,
+                            ),
+                          )
+                        : "N/A"}
+                    </td>
+                  </tr>
+                )}
+                <tr className="bg-[#f7f3ea]">
+                  <td className="p-2.5 font-semibold col-span-2 text-[#10151f]">
+                    Total Property Value
+                  </td>
+                  <td />
+                  <td className="p-2.5 font-bold text-[#10151f]">
+                    {formatNPR(result.finalValue)}
+                  </td>
+                  <td className="p-2.5 font-bold text-[#10151f]">
+                    {formatNPR(Math.round(result.finalValue * 0.8))}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {/* Section 6: Auction Liquidation Estimate */}
+          <div>
+            <h2 className="font-[PoppinsRegular] text-sm sm:text-lg font-bold text-[#10151f] flex items-center gap-2 border-b border-[#e8dfc8] pb-2">
               <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#8a5a00]" />
               Distress Sale & Auction Liquidation Forecast
             </h2>
@@ -811,7 +899,7 @@ export function ValuationReportModal({
                 <span className="block text-[#b91c1c] font-semibold">
                   Conservative (60%)
                 </span>
-                <span className="font-serif font-bold text-xs sm:text-sm text-[#10151f] mt-1 block break-words">
+                <span className="font-[PoppinsRegular] font-bold text-xs sm:text-sm text-[#10151f] mt-1 block break-words">
                   {formatNPR(Math.round(result.finalValue * 0.6))}
                 </span>
               </div>
@@ -819,7 +907,7 @@ export function ValuationReportModal({
                 <span className="block text-[#8a5a00] font-semibold">
                   Expected (70%)
                 </span>
-                <span className="font-serif font-bold text-xs sm:text-sm text-[#10151f] mt-1 block break-words">
+                <span className="font-[PoppinsRegular] font-bold text-xs sm:text-sm text-[#10151f] mt-1 block break-words">
                   {formatNPR(Math.round(result.finalValue * 0.7))}
                 </span>
               </div>
@@ -827,7 +915,7 @@ export function ValuationReportModal({
                 <span className="block text-green-700 font-semibold">
                   Optimistic (80%)
                 </span>
-                <span className="font-serif font-bold text-xs sm:text-sm text-[#10151f] mt-1 block break-words">
+                <span className="font-[PoppinsRegular] font-bold text-xs sm:text-sm text-[#10151f] mt-1 block break-words">
                   {formatNPR(Math.round(result.finalValue * 0.8))}
                 </span>
               </div>

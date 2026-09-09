@@ -8,7 +8,6 @@
 export interface Floor {
   name: string;
   area: number;
-  /** Optional per-floor override; falls back to Building.defaultRatePerSqft */
   ratePerSqft?: number;
 }
 
@@ -19,20 +18,25 @@ export interface Location {
 }
 
 export interface Building {
-  defaultRatePerSqft: number;
+  
   sanitaryRate: number;
   electricalRate: number;
   usefulLife: number;
-  scrapValue: number;
+  depreciationRate: number;
   floors: Floor[];
 }
 
 export interface PropertyInput {
   propertyId: string;
-  ownerDetails:OwnerDetail
+  ownerDetails: OwnerDetail;
   location: Location;
 
-  landAreaAana: number;
+  landArea:{
+    ropani: number;
+    aana: number;
+    paisa: number;
+    dam: number;
+  }
 
   governmentRate: number;
   marketRate: number;
@@ -46,39 +50,26 @@ export interface PropertyInput {
   marketWeight: number;
 
   structuralAmenities?: {
-    roadWidth?: number;
-    roadType?: string;
-    roadCondition?: string;
-
-    buildingType?: string;
-    buildingCondition?: string;
-
-    waterSupply?: boolean;
-    electricity?: boolean;
-    drainage?: boolean;
-
-    parkingAvailable?: boolean;
-
-    landShape?: string;
-    landFacing?: string;
-    roadAccess?: string;
-
-    distanceFromMainRoad?: number;
-    distanceFromHighway?: number;
-
-    
-  };
+    factor: string;
+    observedValue: string;
+    adjustment: number;
+  }[];
   images?: {
-    name:string,
-    file:File,
-    type:string
+    name: string;
+    file: File;
+    type: string;
   }[];
 }
 
 // ── Valuation result ────────────────────────
 
 export interface LandInputs {
-  landAreaAana: number;
+  landArea:{
+    ropani: number;
+    aana: number;
+    paisa: number;
+    dam: number;
+  },
   governmentRate: number;
   marketRate: number;
 }
@@ -92,9 +83,8 @@ export interface LandResult {
   weightedRate: number;
   adoptedRate: number;
   landValue: number;
-   amenityScore:number;
-    amenityAdjustment: number;
-    originalMarketRate: number;
+  amenityAdjustment: number;
+  originalMarketRate: number;
 }
 
 export interface FloorCalculation {
@@ -120,7 +110,6 @@ export interface BuildingResult {
   depreciation: {
     age: number;
     usefulLife: number;
-    scrapValue: number;
     annualRate: number;
     amount: number;
   };
@@ -129,10 +118,22 @@ export interface BuildingResult {
 
 export interface ValuationResult {
   propertyId: string;
-  ownerDetails:OwnerDetail,
-  valuatorDetail:{
-    valuatorName:string,
-  },
+  ownerDetails: OwnerDetail;
+  landArea:{
+    ropani: number;
+    aana: number;
+    paisa: number;
+    dam: number;
+  }
+  landAreaAana: number;
+  structuralAmenities?: {
+    factor: string;
+    observedValue: string;
+    adjustment: number;
+  }[];
+  valuatorDetail: {
+    valuatorName: string;
+  };
   valuationMethod: {
     land: string;
     building: string;
@@ -149,16 +150,16 @@ export interface ValuationResult {
     depreciationMethod: string;
   };
   images?: {
-    name:string,
-    file:File,
-    type:string
+    name: string;
+    file: File;
+    type: string;
   }[];
 }
 
-export interface OwnerDetail{
-  ownerName:string;
-  ownerNumber:number;
-  ownerLocation:string
+export interface OwnerDetail {
+  ownerName: string;
+  ownerNumber: number;
+  ownerLocation: string;
 }
 
 export type PropertyImageType = "satellite" | "trace" | "physical";

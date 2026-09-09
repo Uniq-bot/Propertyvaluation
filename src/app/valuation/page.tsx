@@ -15,7 +15,12 @@ import {
   ValueSummary,
   WeightValue,
 } from "@/components/Additionals";
-import { formatNPR, formatNumber, formatPercent } from "@/lib/functions";
+import {
+  convertToAana,
+  formatNPR,
+  formatNumber,
+  formatPercent,
+} from "@/lib/functions";
 import InflationChart from "@/components/Chart";
 import { BAGMATI_PROVINCE_DATA } from "@/data/bagmatiData";
 import { ValuationReportModal } from "@/components/ValuationReportModal";
@@ -33,6 +38,7 @@ import type {
 import { LandPlot, X } from "lucide-react";
 import { Stepper } from "@/components/Steppers";
 import { StepCard } from "@/components/StepCard";
+import { PROPERTY_FACTORS } from "@/data/factors";
 
 // ── Design tokens ────────────────────────────
 export const CHARCOAL = "#10151f";
@@ -52,34 +58,28 @@ const emptyProperty: PropertyInput = {
   ownerDetails: {
     ownerName: "",
     ownerNumber: 0,
-    ownerLocation: ""
+    ownerLocation: "",
   },
   location: { district: "", municipality: "", ward: 1 },
-  landAreaAana: 0,
+  landArea: {
+    ropani: 0,
+    aana: 0,
+    paisa: 0,
+    dam: 0,
+  },
   governmentRate: 0,
   governmentWeight: 0,
   marketWeight: 0,
   marketRate: 0,
   buildingAge: 0,
 
-  structuralAmenities: {
-    roadWidth: 0,
-    roadType: "",
-    roadCondition: "",
-    landFacing: "",
-    landShape: "",
-    waterSupply: false,
-    drainage: false,
-    electricity: false,
-    parkingAvailable: false,
-  },
+  structuralAmenities: [],
 
   building: {
-    defaultRatePerSqft: 0,
-    sanitaryRate: 0.1,
-    electricalRate: 0.08,
+    depreciationRate: 0,
+    sanitaryRate: 0.05,
+    electricalRate: 0.05,
     usefulLife: 50,
-    scrapValue: 0.1,
     floors: [],
   },
 };
@@ -98,7 +98,9 @@ export default function PropertyValuationPage() {
   const router = useRouter();
 
   const [property, setProperty] = useState<PropertyInput>(emptyProperty);
-  const [ownerDetail, setOwnerDetail] = useState<OwnerDetail>({...emptyProperty.ownerDetails});
+  const [ownerDetail, setOwnerDetail] = useState<OwnerDetail>({
+    ...emptyProperty.ownerDetails,
+  });
   const [result, setResult] = useState<ValuationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -110,7 +112,54 @@ export default function PropertyValuationPage() {
   const [images, setImages] = useState<
     { name: string; file: File; type: string }[]
   >([]);
-  console.log(images);
+
+  // console.log(images);
+  const [factorsField, setFactorsField] = useState<
+    { factor: string; observedValue: string; adjustment: number }[]
+  >([
+    {
+      factor: "",
+      observedValue: "",
+      adjustment: 0,
+    },
+  ]);
+
+  const addFactorField = () => {
+    setFactorsField((prev) => [
+      ...prev,
+      { factor: "", observedValue: "", adjustment: 0 },
+    ]);
+  };
+
+  const deleteFactorField = (index: number) => {
+    setFactorsField((prev) => prev.filter((_, i) => i !== index));
+  };
+  const updateFactorField = (
+    index: number,
+    field: "factor" | "observedValue" | "adjustment",
+    value: string | number,
+  ) => {
+    setFactorsField((prev) =>
+      prev.map((f, i) => (i === index ? { ...f, [field]: value } : f)),
+    );
+  };
+
+  const updateFactordataInProperty = (factorFields: any) => {
+    setProperty((prev) => ({
+      ...prev,
+      structuralAmenities: factorFields.map((f: any) => ({
+        factor: f.factor,
+        observedValue: f.observedValue,
+        adjustment: f.adjustment,
+      })),
+    }));
+  };
+
+  const handleNext = (next: StepIndex) => {
+    updateFactordataInProperty(factorsField);
+    advance(next);
+  };
+  console.log(property);
 
   // Derived selects
   const selectedDistrictInfo = BAGMATI_PROVINCE_DATA.find(
@@ -129,14 +178,19 @@ export default function PropertyValuationPage() {
     !!property.location.ward;
 
   const landDone =
-    property.landAreaAana > 0 &&
+    convertToAana(
+      property.landArea.ropani,
+      property.landArea.aana,
+      property.landArea.paisa,
+      property.landArea.dam,
+      "aana",
+    ) > 0 &&
     property.governmentRate > 0 &&
     property.marketRate > 0;
 
   const buildingDone =
     !includeBuilding ||
     (property.building !== undefined &&
-      property.building.defaultRatePerSqft > 0 &&
       property.building.floors.length > 0 &&
       property.building.floors.every((f) => f.area > 0 && f.name.trim()));
 
@@ -159,15 +213,31 @@ export default function PropertyValuationPage() {
   ) => {
     setProperty((prev) => ({ ...prev, [key]: value }));
   };
-
-  const updatePropertyOwnerDetails=(ownerDetails: OwnerDetail)=>{
-    setProperty((prev)=>({
+  const updatePropertyLandArea = (
+    key: keyof PropertyInput["landArea"],
+    value: number,
+  ) => {
+    setProperty((prev) => ({
       ...prev,
-      ownerDetails:ownerDetails
-    }))
+      landArea: { ...prev.landArea, [key]: value },
+    }));
+  };
 
-    advance(0)
-  }
+  const updatePropertyBuilding = (key: keyof Building, value: any) => {
+    setProperty((prev) => ({
+      ...prev,
+      building: { ...prev.building!, [key]: value },
+    }));
+  };
+
+  const updatePropertyOwnerDetails = (ownerDetails: OwnerDetail) => {
+    setProperty((prev) => ({
+      ...prev,
+      ownerDetails: ownerDetails,
+    }));
+
+    advance(0);
+  };
 
   const updateLocation = <K extends keyof Location>(
     key: K,
@@ -186,20 +256,20 @@ export default function PropertyValuationPage() {
       ...prev,
       building: { ...prev.building!, [key]: value },
     }));
-  const updateAmenity = <
-    K extends keyof NonNullable<PropertyInput["structuralAmenities"]>,
-  >(
-    key: K,
-    value: NonNullable<PropertyInput["structuralAmenities"]>[K],
-  ) => {
-    setProperty((prev) => ({
-      ...prev,
-      structuralAmenities: {
-        ...prev.structuralAmenities,
-        [key]: value,
-      },
-    }));
-  };
+  // const updateAmenity = <
+  //   K extends keyof NonNullable<PropertyInput["structuralAmenities"]>,
+  // >(
+  //   key: K,
+  //   value: NonNullable<PropertyInput["structuralAmenities"]>[K],
+  // ) => {
+  //   setProperty((prev) => ({
+  //     ...prev,
+  //     structuralAmenities: {
+  //       ...prev.structuralAmenities,
+  //       [key]: value,
+  //     },
+  //   }));
+  // };
   const updateFloor = (index: number, area: number) =>
     setProperty((prev) => ({
       ...prev,
@@ -210,7 +280,17 @@ export default function PropertyValuationPage() {
         ),
       },
     }));
-
+  const updateRate = (index: number, rate: number) => {
+    setProperty((prev) => ({
+      ...prev,
+      building: {
+        ...prev.building!,
+        floors: prev.building!.floors.map((f, i) =>
+          i === index ? { ...f, ratePerSqft: rate } : f,
+        ),
+      },
+    }));
+  };
   const updateFloorName = (index: number, name: string) =>
     setProperty((prev) => ({
       ...prev,
@@ -237,7 +317,10 @@ export default function PropertyValuationPage() {
         ...prev,
         building: {
           ...prev.building!,
-          floors: [...prev.building!.floors, { name: defaultName, area: 0 }],
+          floors: [
+            ...prev.building!.floors,
+            { name: defaultName, area: 0, ratePerSqft: 0 },
+          ],
         },
       };
     });
@@ -253,39 +336,61 @@ export default function PropertyValuationPage() {
   };
 
   const handleImageUpload = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    imageType: PropertyImageType,
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "satellite" | "trace" | "physical",
   ) => {
-    const file = event.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
 
-    if (!file) return;
+    if (files.length === 0) return;
 
-    const imageNames: Record<PropertyImageType, string> = {
-      satellite: "Satellite View",
-      trace: "Trace View",
-      physical: "Physical View",
-    };
+    setImages((prev) => {
+      if (type === "physical") {
+        const existingPhysical = prev.filter((img) => img.type === "physical");
 
-    const newImage: PropertyImage = {
-      type: imageType,
-      name: imageNames[imageType],
-      file,
-    };
+        const otherImages = prev.filter((img) => img.type !== "physical");
 
-    // Replace existing image of the same type
-    setImages((prevImages) => [
-      ...prevImages.filter((image) => image.type !== imageType),
-      newImage,
-    ]);
+        const remainingSlots = 4 - existingPhysical.length;
 
-    // Allow selecting the same file again
-    event.target.value = "";
+        const newImages = files.slice(0, remainingSlots).map((file) => ({
+          name: file.name,
+          file,
+          type: "physical" as const,
+        }));
+
+        return [...otherImages, ...existingPhysical, ...newImages];
+      }
+
+      // Satellite / trace = only one
+      const filtered = prev.filter((img) => img.type !== type);
+
+      return [
+        ...filtered,
+        {
+          name: files[0].name,
+          file: files[0],
+          type,
+        },
+      ];
+    });
+
+    // Reset input so the same file can be selected again
+    e.target.value = "";
   };
-  const deleteImage = (imageType: PropertyImageType) => {
-    setImages((prevImages) =>
-      prevImages.filter((image) => image.type !== imageType),
-    );
-  };
+ const deleteImage = (type: any, index?: number) => {
+  setImages((prev) => {
+    if (type === "physical" && index !== undefined) {
+      const physicalImages = prev.filter(
+        (img) => img.type === "physical"
+      );
+
+      const imageToDelete = physicalImages[index];
+
+      return prev.filter((img) => img !== imageToDelete);
+    }
+
+    return prev.filter((img) => img.type !== type);
+  });
+};
   const removeFloor = (index: number) =>
     setProperty((prev) => ({
       ...prev,
@@ -331,18 +436,16 @@ export default function PropertyValuationPage() {
       );
     } finally {
       setLoading(false);
-      console.log(result)
+      console.log(result);
     }
   };
-
-  console.log(result);
 
   // Convenience typed cast for building result
   const buildingResult = result?.building as BuildingResult | false | undefined;
 
   return (
     <main className="min-h-screen" style={{ backgroundColor: BG, color: TEXT }}>
-      <div className="mx-auto max-w-3xl px-3 sm:px-5 py-5 sm:py-8">
+      <div className="mx-auto max-w-4xl px-3 sm:px-5 py-5 sm:py-8">
         {/* ── Form wizard ──────────────────────────── */}
         {formOpen ? (
           <>
@@ -408,7 +511,11 @@ export default function PropertyValuationPage() {
                   )}
                   <button
                     type="button"
-                    disabled={!ownerDetail?.ownerName || !ownerDetail?.ownerNumber || !ownerDetail?.ownerLocation}
+                    disabled={
+                      !ownerDetail?.ownerName ||
+                      !ownerDetail?.ownerNumber ||
+                      !ownerDetail?.ownerLocation
+                    }
                     onClick={() => updatePropertyOwnerDetails(ownerDetail)}
                     className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: NAVY }}
@@ -595,13 +702,36 @@ export default function PropertyValuationPage() {
                 title="Land details"
                 helper="We blend the government-listed rate with the going market rate — the market rate counts for more since it reflects real conditions."
               >
-                <div className="mb-5 sm:mb-6">
+                <div className="mb-5 sm:mb-6 grid gap-4 sm:gap-5 sm:grid-cols-2">
                   <NumberField
-                    label="Land area"
-                    suffix="Aana"
+                    label="Ropani"
+                    suffix="ropani"
                     placeholder="e.g. 8.5"
-                    value={property.landAreaAana}
-                    onChange={(value) => updateProperty("landAreaAana", value)}
+                    value={property.landArea.ropani}
+                    onChange={(value) =>
+                      updatePropertyLandArea("ropani", value)
+                    }
+                  />
+                  <NumberField
+                    label="Aana"
+                    suffix="aana"
+                    placeholder="e.g. 8.5"
+                    value={property.landArea.aana}
+                    onChange={(value) => updatePropertyLandArea("aana", value)}
+                  />
+                  <NumberField
+                    label="Paisa"
+                    suffix="paisa"
+                    placeholder="e.g. 8.5"
+                    value={property.landArea.paisa}
+                    onChange={(value) => updatePropertyLandArea("paisa", value)}
+                  />
+                  <NumberField
+                    label="Dam"
+                    suffix="dam"
+                    placeholder="e.g. 8.5"
+                    value={property.landArea.dam}
+                    onChange={(value) => updatePropertyLandArea("dam", value)}
                   />
                 </div>
 
@@ -684,231 +814,178 @@ export default function PropertyValuationPage() {
                   </div>
                   {/* Property Factors */}
                   <div
-                    className="mt-4 sm:mt-6 rounded border p-3 sm:p-5"
+                    className="mt-4 sm:mt-6 rounded-xl border p-3 sm:p-5"
                     style={{ borderColor: BORDER }}
                   >
-                    <div className="mb-4 sm:mb-5">
-                      <h3 className="text-sm sm:text-base font-semibold text-gray-900">
-                        Property factors
-                      </h3>
-                      <p
-                        className="mt-1 text-xs sm:text-sm leading-relaxed"
-                        style={{ color: MUTED }}
+                    {/* Header */}
+                    <div className="mb-4 sm:mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                          Property factors
+                        </h3>
+
+                        <p
+                          className="mt-1 text-xs sm:text-sm leading-relaxed"
+                          style={{ color: MUTED }}
+                        >
+                          Add local factors that can affect the property's
+                          market value.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="w-fit rounded-md bg-gold-gradient px-3.5 py-2.5 text-xs sm:text-sm font-bold text-gray-900 transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                        onClick={addFactorField}
                       >
-                        A few local factors that can affect the property's
-                        market value.
-                      </p>
+                        + Add Field
+                      </button>
                     </div>
 
-                    <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
-                      {/* Road Width */}
-                      <NumberField
-                        label="Road width"
-                        suffix="ft"
-                        placeholder="e.g. 20"
-                        value={property.structuralAmenities?.roadWidth ?? 0}
-                        onChange={(value) => updateAmenity("roadWidth", value)}
-                      />
-
-                      {/* Road Type */}
-                      <div>
-                        <label
-                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
-                          style={{ color: MUTED }}
-                        >
-                          Road type
-                        </label>
-
-                        <select
-                          value={property.structuralAmenities?.roadType ?? ""}
-                          onChange={(e) =>
-                            updateAmenity("roadType", e.target.value)
-                          }
-                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
-                          style={{ borderColor: BORDER }}
-                        >
-                          <option value="">Select road type</option>
-                          <option value="Blacktopped">Blacktopped</option>
-                          <option value="Concrete">Concrete</option>
-                          <option value="Gravel">Gravel</option>
-                          <option value="Earthen">Earthen</option>
-                        </select>
-                      </div>
-
-                      {/* Road Condition */}
-                      <div>
-                        <label
-                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
-                          style={{ color: MUTED }}
-                        >
-                          Road condition
-                        </label>
-
-                        <select
-                          value={
-                            property.structuralAmenities?.roadCondition ?? ""
-                          }
-                          onChange={(e) =>
-                            updateAmenity("roadCondition", e.target.value)
-                          }
-                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
-                          style={{ borderColor: BORDER }}
-                        >
-                          <option value="">Select condition</option>
-                          <option value="Good">Good</option>
-                          <option value="Average">Average</option>
-                          <option value="Poor">Poor</option>
-                        </select>
-                      </div>
-
-                      {/* Land Facing */}
-                      <div>
-                        <label
-                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
-                          style={{ color: MUTED }}
-                        >
-                          Land facing
-                        </label>
-
-                        <select
-                          value={property.structuralAmenities?.landFacing ?? ""}
-                          onChange={(e) =>
-                            updateAmenity("landFacing", e.target.value)
-                          }
-                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
-                          style={{ borderColor: BORDER }}
-                        >
-                          <option value="">Select facing</option>
-                          <option value="East">East</option>
-                          <option value="West">West</option>
-                          <option value="North">North</option>
-                          <option value="South">South</option>
-                        </select>
-                      </div>
-
-                      {/* Land Shape */}
-                      <div>
-                        <label
-                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
-                          style={{ color: MUTED }}
-                        >
-                          Land shape
-                        </label>
-
-                        <select
-                          value={property.structuralAmenities?.landShape ?? ""}
-                          onChange={(e) =>
-                            updateAmenity("landShape", e.target.value)
-                          }
-                          className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2"
-                          style={{ borderColor: BORDER }}
-                        >
-                          <option value="">Select shape</option>
-                          <option value="Rectangular">Rectangular</option>
-                          <option value="Square">Square</option>
-                          <option value="Irregular">Irregular</option>
-                        </select>
-                      </div>
-
-                      {/* Facilities */}
-                      <div className="sm:col-span-2">
-                        <label
-                          className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
-                          style={{ color: MUTED }}
-                        >
-                          Available facilities
-                        </label>
-
-                        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                          {/* Water */}
-                          <label
-                            className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
-                            style={{ borderColor: BORDER }}
+                    {/* Table wrapper for mobile scrolling */}
+                    <div
+                      className="overflow-x-auto rounded-lg border"
+                      style={{ borderColor: BORDER }}
+                    >
+                      <table className="w-full min-w-[700px] border-collapse text-left">
+                        <thead>
+                          <tr
+                            className="border-b"
+                            style={{
+                              borderColor: BORDER,
+                              backgroundColor: "#faf8f1",
+                            }}
                           >
-                            <input
-                              type="checkbox"
-                              checked={
-                                property.structuralAmenities?.waterSupply ??
-                                false
-                              }
-                              onChange={(e) =>
-                                updateAmenity("waterSupply", e.target.checked)
-                              }
-                              className="h-4 w-4"
-                            />
-                            <span className="text-xs sm:text-sm font-medium text-gray-800">
-                              Water supply
-                            </span>
-                          </label>
+                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                              Factor / Amenity
+                            </th>
 
-                          {/* Drainage */}
-                          <label
-                            className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
-                            style={{ borderColor: BORDER }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={
-                                property.structuralAmenities?.drainage ?? false
-                              }
-                              onChange={(e) =>
-                                updateAmenity("drainage", e.target.checked)
-                              }
-                              className="h-4 w-4"
-                            />
-                            <span className="text-xs sm:text-sm font-medium text-gray-800">
-                              Drainage
-                            </span>
-                          </label>
+                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                              Observed Value
+                            </th>
 
-                          {/* Electricity */}
-                          <label
-                            className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
-                            style={{ borderColor: BORDER }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={
-                                property.structuralAmenities?.electricity ??
-                                false
-                              }
-                              onChange={(e) =>
-                                updateAmenity("electricity", e.target.checked)
-                              }
-                              className="h-4 w-4"
-                            />
-                            <span className="text-xs sm:text-sm font-medium text-gray-800">
-                              Electricity
-                            </span>
-                          </label>
-                        </div>
-                      </div>
+                            {/* <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                              Adjustment
+                            </th> */}
 
-                      {/* Parking */}
-                      <div className="sm:col-span-2">
-                        <label
-                          className="flex cursor-pointer items-center gap-3 rounded border bg-white px-3 py-2.5 sm:py-3 transition hover:bg-[#f7f3ea]"
-                          style={{ borderColor: BORDER }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={
-                              property.structuralAmenities?.parkingAvailable ??
-                              false
-                            }
-                            onChange={(e) =>
-                              updateAmenity(
-                                "parkingAvailable",
-                                e.target.checked,
-                              )
-                            }
-                            className="h-4 w-4"
-                          />
-                          <span className="text-xs sm:text-sm font-medium text-gray-800">
-                            Parking available
-                          </span>
-                        </label>
-                      </div>
+                            <th className="w-24 px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {factorsField.map((factor, index) => {
+                            const selectedFactor = PROPERTY_FACTORS.find(
+                              (item) => item.value === factor.factor,
+                            );
+
+                            return (
+                              <tr
+                                key={index}
+                                className="border-b last:border-b-0 transition-colors hover:bg-gray-50"
+                                style={{ borderColor: BORDER }}
+                              >
+                                {/* Factor */}
+                                <td className="px-3 py-3">
+                                  <select
+                                    value={factor.factor}
+                                    onChange={(e) =>
+                                      updateFactorField(
+                                        index,
+                                        "factor",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition"
+                                    style={{ borderColor: BORDER }}
+                                  >
+                                    <option value="null">
+                                      - Select the Factor -
+                                    </option>
+
+                                    {PROPERTY_FACTORS.map((item) => (
+                                      <option
+                                        key={item.value}
+                                        value={item.value}
+                                      >
+                                        {item.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+
+                                {/* Observed Value */}
+                                <td className="px-3 py-3">
+                                  <input
+                                    disabled={factor.factor === "null"}
+                                    type="text"
+                                    value={factor.observedValue}
+                                    onChange={(e) =>
+                                      updateFactorField(
+                                        index,
+                                        "observedValue",
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder={
+                                      selectedFactor?.placeholder ||
+                                      "Enter observed value"
+                                    }
+                                    className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none"
+                                    style={{ borderColor: BORDER }}
+                                  />
+                                </td>
+
+                                {/* Adjustment
+                                <td>
+                                  <input
+                                    disabled={
+                                      factorsField[index].factor === "null"
+                                    }
+                                    type="number"
+                                    value={factor.adjustment}
+                                    onChange={(e) =>
+                                      updateFactorField(
+                                        index,
+                                        "adjustment",
+                                        e.target.value === ""
+                                          ? ""
+                                          : Number(e.target.value),
+                                      )
+                                    }
+                                    placeholder="e.g. -5 or 5"
+                                    className="w-full rounded-md border bg-white px-3 py-2.5 pr-9 text-sm text-gray-900 outline-none transition focus:ring-2"
+                                    style={{
+                                      borderColor: BORDER,
+                                    }}
+                                  />
+
+                                  <span
+                                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm"
+                                    style={{ color: FAINT }}
+                                  >
+                                    %
+                                  </span>
+                                </td> */}
+
+                                {/* Action */}
+                                <td className="px-3 py-3">
+                                  <button
+                                    type="button"
+                                    disabled={factorsField.length === 1}
+                                    onClick={() => deleteFactorField(index)}
+                                    className="rounded-md border px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"
+                                    style={{ borderColor: BORDER }}
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
 
@@ -1012,7 +1089,7 @@ export default function PropertyValuationPage() {
                     <button
                       type="button"
                       disabled={!landDone}
-                      onClick={() => advance(2)}
+                      onClick={() => handleNext(2)}
                       className="bg-gold-gradient rounded-md py-2.5 px-3 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
@@ -1045,15 +1122,6 @@ export default function PropertyValuationPage() {
                 {includeBuilding ? (
                   <div className="mt-5 sm:mt-6">
                     <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
-                      <MoneyField
-                        label="Construction rate"
-                        suffix="/ sqft"
-                        placeholder="e.g. 2500"
-                        value={property.building?.defaultRatePerSqft ?? 0}
-                        onChange={(value) =>
-                          updateBuilding("defaultRatePerSqft", value)
-                        }
-                      />
                       <NumberField
                         label="Building age"
                         suffix="Years"
@@ -1063,15 +1131,16 @@ export default function PropertyValuationPage() {
                           updateProperty("buildingAge", value)
                         }
                       />
+                      <NumberField
+                        label="Depriciation Rate"
+                        suffix="%"
+                        placeholder="e.g. 5%"
+                        value={property.building?.depreciationRate ?? 0}
+                        onChange={(value) =>
+                          updatePropertyBuilding("depreciationRate", value)
+                        }
+                      />
                     </div>
-
-                    <p
-                      className="mt-3 text-[11px] sm:text-xs italic"
-                      style={{ color: "#94a3b8" }}
-                    >
-                      Depreciation assumes a 50-year useful life and a 10% scrap
-                      value — fixed.
-                    </p>
 
                     <div className="mt-5 sm:mt-7">
                       <div className="mb-3 flex items-center justify-between">
@@ -1130,6 +1199,22 @@ export default function PropertyValuationPage() {
                                   style={{ color: MUTED }}
                                 >
                                   sqft
+                                </span>
+                                <input
+                                  type="number"
+                                  value={floor.ratePerSqft || ""}
+                                  onChange={(e) =>
+                                    updateRate(index, Number(e.target.value))
+                                  }
+                                  placeholder="Rate per sqft"
+                                  className="w-24 sm:w-28 rounded border bg-white px-3 py-2 text-right text-xs sm:text-sm outline-none"
+                                  style={{ borderColor: BORDER }}
+                                />
+                                <span
+                                  className="text-[11px] sm:text-xs"
+                                  style={{ color: MUTED }}
+                                >
+                                  NRS/sqft
                                 </span>
                                 <button
                                   type="button"
@@ -1202,24 +1287,31 @@ export default function PropertyValuationPage() {
                           title: "Satellite View",
                           description:
                             "Upload a satellite image of the property.",
+                          maxImages: 1,
                         },
                         {
                           type: "trace",
                           title: "Trace View",
                           description:
                             "Upload the land trace / cadastral image.",
+                          maxImages: 1,
                         },
                         {
                           type: "physical",
                           title: "Physical View",
                           description:
-                            "Upload a physical photograph of the property.",
+                            "Upload up to 4 physical photographs of the property.",
+                          maxImages: 4,
                         },
                       ] as const
                     ).map((imageType) => {
-                      const image = images.find(
+                      const typeImages = images.filter(
                         (img) => img.type === imageType.type,
                       );
+
+                      const isPhysical = imageType.type === "physical";
+                      const canUploadMore =
+                        typeImages.length < imageType.maxImages;
 
                       return (
                         <div
@@ -1237,12 +1329,79 @@ export default function PropertyValuationPage() {
                             </p>
                           </div>
 
-                          {/* Preview */}
-                          {image ? (
+                          {/* Physical images */}
+                          {isPhysical ? (
+                            <>
+                              {typeImages.length > 0 && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  {typeImages.map((image, index) => (
+                                    <div
+                                      key={`${image.name}-${index}`}
+                                      className="relative"
+                                    >
+                                      <img
+                                        src={URL.createObjectURL(image.file)}
+                                        alt={image.name}
+                                        className="h-32 w-full rounded object-cover"
+                                      />
+
+                                      {/* Delete */}
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          deleteImage(image.type, index)
+                                        }
+                                        className="absolute right-1.5 top-1.5 rounded-full bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
+                                        aria-label={`Remove ${image.name}`}
+                                      >
+                                        <X className="h-3.5 w-3.5" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Add more physical images */}
+                              {canUploadMore && (
+                                <label className="mt-3 flex h-32 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
+                                  <div className="mb-2 rounded-full bg-[#f7f3ea] p-3">
+                                    <LandPlot className="h-5 w-5 text-[#8a5a00]" />
+                                  </div>
+
+                                  <p className="text-xs sm:text-sm font-semibold text-[#10151f]">
+                                    {typeImages.length === 0
+                                      ? "Upload Images"
+                                      : "Add More Images"}
+                                  </p>
+
+                                  <p className="mt-1 text-[10px] sm:text-[11px] text-[#64748b]">
+                                    {typeImages.length}/4 images
+                                  </p>
+
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) =>
+                                      handleImageUpload(e, imageType.type)
+                                    }
+                                  />
+                                </label>
+                              )}
+
+                              {!canUploadMore && (
+                                <p className="mt-2 text-center text-[10px] text-[#64748b]">
+                                  Maximum 4 physical images reached.
+                                </p>
+                              )}
+                            </>
+                          ) : /* Satellite / Trace */
+                          typeImages.length > 0 ? (
                             <div className="relative">
                               <img
-                                src={URL.createObjectURL(image.file)}
-                                alt={image.name}
+                                src={URL.createObjectURL(typeImages[0].file)}
+                                alt={typeImages[0].name}
                                 className="h-40 sm:h-48 w-full rounded object-cover"
                               />
 
@@ -1251,7 +1410,7 @@ export default function PropertyValuationPage() {
                                 type="button"
                                 onClick={() => deleteImage(imageType.type)}
                                 className="absolute right-2 top-2 rounded-full bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
-                                aria-label={`Remove ${image.name}`}
+                                aria-label={`Remove ${typeImages[0].name}`}
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -1270,7 +1429,6 @@ export default function PropertyValuationPage() {
                               </label>
                             </div>
                           ) : (
-                            /* Upload */
                             <label className="flex h-40 sm:h-48 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
                               <div className="mb-2 rounded-full bg-[#f7f3ea] p-3">
                                 <LandPlot className="h-5 w-5 text-[#8a5a00]" />
@@ -1338,7 +1496,7 @@ export default function PropertyValuationPage() {
                     },
                     {
                       label: "Land",
-                      text: `${formatNumber(property.landAreaAana)} aana · government ${formatNPR(property.governmentRate)} · market ${formatNPR(property.marketRate)}`,
+                      text: `${formatNumber(convertToAana(property.landArea.ropani, property.landArea.aana, property.landArea.paisa, property.landArea.dam, "aana"))} aana · government ${formatNPR(property.governmentRate)} · market ${formatNPR(property.marketRate)}`,
                       editStep: 1,
                     },
                     {
@@ -1457,7 +1615,7 @@ export default function PropertyValuationPage() {
                 Total property value
               </p>
               <p
-                className="mt-2 font-serif text-2xl sm:text-4xl md:text-5xl font-bold break-words"
+                className="mt-2 font-[PoppinsRegular] text-2xl sm:text-4xl md:text-5xl font-bold break-words"
                 style={{ color: NAVY }}
               >
                 {formatNPR(result.finalValue)}
@@ -1532,7 +1690,7 @@ export default function PropertyValuationPage() {
               <div className="space-y-5 sm:space-y-6 px-1 pb-5 sm:pb-6 sm:px-2">
                 {/* Land section */}
                 <ResultSection
-                  number="1"
+                  number=""
                   title="Land valuation"
                   description="How the adopted land rate and total land value were worked out."
                 >
@@ -1578,13 +1736,20 @@ export default function PropertyValuationPage() {
                   </div>
 
                   <div
-                    className="mt-4 sm:mt-5 grid border sm:grid-cols-2"
+                    className="mt-4 sm:mt-5 grid border sm:grid-cols-3"
                     style={{ borderColor: BORDER }}
                   >
+                    <ValueSummary
+                      label="Total land area(R-A-P-D)"
+                      value={`${result.land.inputs.landArea.ropani} - ${result.land.inputs.landArea.aana} - ${result.land.inputs.landArea.paisa} - ${result.land.inputs.landArea.dam}`}
+                      strong
+                      right
+                    />
                     <ValueSummary
                       label="Adopted land rate"
                       value={`${formatNPR(result.land.adoptedRate)} / Aana`}
                     />
+
                     <ValueSummary
                       label="Total land value"
                       value={formatNPR(result.land.landValue)}
@@ -1595,13 +1760,13 @@ export default function PropertyValuationPage() {
                 </ResultSection>
                 {/* Property & Amenity Assessment */}
                 <ResultSection
-                  number="2"
+                  number=""
                   title="Property & amenity assessment"
                   description="Property-specific factors used to adjust the prevailing market land rate."
                 >
                   {property.structuralAmenities ? (
                     <>
-                      {/* Score summary */}
+                      {/* Score summary
                       <div
                         className="grid gap-px overflow-hidden rounded border sm:grid-cols-3"
                         style={{ borderColor: BORDER }}
@@ -1622,7 +1787,7 @@ export default function PropertyValuationPage() {
                           value={formatNPR(result.land.inputs.marketRate)}
                           strong
                         />
-                      </div>
+                      </div> */}
 
                       {/* Amenities */}
                       <div
@@ -1645,84 +1810,15 @@ export default function PropertyValuationPage() {
                         </div>
 
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3">
-                          <AmenityResult
-                            label="Road width"
-                            value={`${property.structuralAmenities.roadWidth ?? 0} ft`}
-                          />
-
-                          <AmenityResult
-                            label="Road type"
-                            value={
-                              property.structuralAmenities.roadType ||
-                              "Not specified"
-                            }
-                          />
-
-                          <AmenityResult
-                            label="Road condition"
-                            value={
-                              property.structuralAmenities.roadCondition ||
-                              "Not specified"
-                            }
-                          />
-
-                          <AmenityResult
-                            label="Land shape"
-                            value={
-                              property.structuralAmenities.landShape ||
-                              "Not specified"
-                            }
-                          />
-
-                          <AmenityResult
-                            label="Land facing"
-                            value={
-                              property.structuralAmenities.landFacing ||
-                              "Not specified"
-                            }
-                          />
-
-                          <AmenityResult
-                            label="Water supply"
-                            value={
-                              property.structuralAmenities.waterSupply
-                                ? "Available"
-                                : "Not available"
-                            }
-                            positive={property.structuralAmenities.waterSupply}
-                          />
-
-                          <AmenityResult
-                            label="Drainage"
-                            value={
-                              property.structuralAmenities.drainage
-                                ? "Available"
-                                : "Not available"
-                            }
-                            positive={property.structuralAmenities.drainage}
-                          />
-
-                          <AmenityResult
-                            label="Electricity"
-                            value={
-                              property.structuralAmenities.electricity
-                                ? "Available"
-                                : "Not available"
-                            }
-                            positive={property.structuralAmenities.electricity}
-                          />
-
-                          <AmenityResult
-                            label="Parking"
-                            value={
-                              property.structuralAmenities.parkingAvailable
-                                ? "Available"
-                                : "Not available"
-                            }
-                            positive={
-                              property.structuralAmenities.parkingAvailable
-                            }
-                          />
+                          {property.structuralAmenities?.map(
+                            (amenity, index) => (
+                              <AmenityResult
+                                key={index}
+                                label={amenity.factor}
+                                value={amenity.observedValue}
+                              />
+                            ),
+                          )}
                         </div>
                       </div>
 
@@ -1758,7 +1854,7 @@ export default function PropertyValuationPage() {
                   buildingResult.floors.length > 0 && (
                     <>
                       <ResultSection
-                        number="2"
+                        number=""
                         title="Building valuation"
                         description="Construction cost, additional components and depreciation."
                       >
@@ -1876,7 +1972,7 @@ export default function PropertyValuationPage() {
                       </ResultSection>
 
                       <ResultSection
-                        number="3"
+                        number=""
                         title="Depreciation statement"
                         description="How building depreciation was applied."
                       >
@@ -1891,12 +1987,7 @@ export default function PropertyValuationPage() {
                                 label="Useful life"
                                 value={`${buildingResult.depreciation.usefulLife} years`}
                               />
-                              <DetailRow
-                                label="Scrap value"
-                                value={formatPercent(
-                                  buildingResult.depreciation.scrapValue,
-                                )}
-                              />
+
                               <DetailRow
                                 label="Annual depreciation rate"
                                 value={formatPercent(
@@ -1918,7 +2009,7 @@ export default function PropertyValuationPage() {
 
                 {/* Inflation chart */}
                 <ResultSection
-                  number="4"
+                  number=""
                   title="Land value inflation & future appreciation forecast"
                   description="10-year land value forecast. Building structure value does not inflate."
                 >

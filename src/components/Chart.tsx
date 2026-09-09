@@ -141,7 +141,7 @@ export default function InflationChart({
         borderColor: GOLD,
         borderWidth: 1,
         padding: 12,
-        titleFont: { family: "Source Sans 3, sans-serif", size: 11, weight: "bold" as const },
+        titleFont: { family: "PoppinsBlack", size: 11, weight: "bold" as const },
         bodyFont:  { family: "Source Sans 3, sans-serif", size: 13, weight: "bold" as const },
         callbacks: {
           title:  (items: TooltipItem<"line">[]) => items[0]?.label ?? "",
@@ -286,7 +286,7 @@ export default function InflationChart({
         >
           Projected land value in {finalYearLabel}
         </p>
-        <p className="mt-2 font-serif text-4xl sm:text-5xl" style={{ color: CHARCOAL }}>
+        <p className="mt-2 font-[PoppinsBlack] text-4xl sm:text-5xl" style={{ color: CHARCOAL }}>
           {formatNPR(lastYearVal)}
         </p>
         <p className="mt-2 text-sm" style={{ color: "#10151f" }}>

@@ -32,7 +32,7 @@ export function NumberField({
       <div className="relative">
         <input
           type="number"
-          value={value === 0 ? "" : value}
+          value={value === undefined ? "":value=== 0 ? "0" : value}
           placeholder={placeholder ?? "0"}
           disabled={disabled}
           onChange={(e) => onChange?.(Number(e.target.value))}

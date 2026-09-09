@@ -4,12 +4,12 @@ import type {
   BuildingResult,
   ValuationResult,
 } from "@/types";
+import { convertToAana } from "./functions";
 
 // ─────────────────────────────────────────────────────────────────
 // Land Valuation
 // Methodology: weighted average — government 40%, market 60%
 // ─────────────────────────────────────────────────────────────────
-
 
 // ─────────────────────────────────────────────────────────────────
 // Nepal Property Amenity Adjustment
@@ -89,76 +89,27 @@ function getFacingScore(facing?: string): number {
   }
 }
 
-function calculateAmenityScore(property: PropertyInput) {
-  const amenities = property.structuralAmenities;
-
-  if (!amenities) {
-    return {
-      score: 50,
-      adjustment: 0,
-      breakdown: {},
-    };
+function calculateAmenityWeight(property: PropertyInput) {
+  const amenities = property.structuralAmenities; // it is an array of objects with factor, observedValue, and adjustment
+  if (!amenities || amenities.length === 0) {
+    return 0;
   }
 
-  const scores = {
-    roadWidth: getRoadWidthScore(amenities.roadWidth ?? 0),
-    roadType: getRoadTypeScore(amenities.roadType),
-    roadCondition: getRoadConditionScore(
-      amenities.roadCondition,
-    ),
-    landShape: getShapeScore(amenities.landShape),
-    landFacing: getFacingScore(amenities.landFacing),
+  let totalScore = 0;
 
-    waterSupply: amenities.waterSupply ? 100 : 0,
-    drainage: amenities.drainage ? 100 : 0,
-    electricity: amenities.electricity ? 100 : 0,
-    parkingAvailable: amenities.parkingAvailable ? 100 : 0,
-  };
+  const totalAmenityWeight = amenities.reduce(
+    (sum, amenity) => sum + amenity.adjustment,
+    totalScore,
+  )/100
+  console.log(totalAmenityWeight);
 
-  const weights = {
-    roadWidth: 0.30,
-    roadType: 0.15,
-    roadCondition: 0.10,
-    landShape: 0.10,
-    landFacing: 0.05,
-    waterSupply: 0.08,
-    drainage: 0.07,
-    electricity: 0.05,
-    parkingAvailable: 0.10,
-  };
+  
 
-  const score =
-    scores.roadWidth * weights.roadWidth +
-    scores.roadType * weights.roadType +
-    scores.roadCondition * weights.roadCondition +
-    scores.landShape * weights.landShape +
-    scores.landFacing * weights.landFacing +
-    scores.waterSupply * weights.waterSupply +
-    scores.drainage * weights.drainage +
-    scores.electricity * weights.electricity +
-    scores.parkingAvailable * weights.parkingAvailable;
-
-  /*
-   * Convert 0–100 score into a market-rate adjustment.
-   *
-   * 50 score → 0%
-   * 100 score → +15%
-   * 0 score → -15%
-   *
-   * This keeps the amenity effect conservative.
-   */
-  const adjustment = ((score - 50) / 50) * 0.15;
-
-  return {
-    score: Math.round(score * 100) / 100,
-    adjustment: Math.round(adjustment * 10000) / 10000,
-    breakdown: scores,
-  };
+  return totalAmenityWeight;
 }
 
 export function calculateLandValue(property: PropertyInput): LandResult {
   const {
-    landAreaAana,
     governmentRate,
     marketRate,
     governmentWeight,
@@ -166,35 +117,18 @@ export function calculateLandValue(property: PropertyInput): LandResult {
   } = property;
 
   // Calculate property-specific amenity score
-  const amenities = calculateAmenityScore(property);
-
-  /*
-   * Government rate is kept unchanged.
-   *
-   * Amenities affect the prevailing market rate instead.
-   */
-  const adjustedMarketRate =
-    marketRate * (1 + amenities.adjustment);
-
-  /*
-   * Weighted rate:
-   * Government rate × government weight
-   * +
-   * Adjusted market rate × market weight
-   */
+  const amenityAdjustRate = calculateAmenityWeight(property);
+  const adjustedMarketRate = marketRate * (1 + amenityAdjustRate);
   const weightedRate =
-    governmentRate * governmentWeight +
-    adjustedMarketRate * marketWeight;
+    governmentRate * governmentWeight + adjustedMarketRate * marketWeight;
 
-  const adoptedRate =
-    property.adoptedLandRate ?? weightedRate;
+  const adoptedRate = property.adoptedLandRate ?? weightedRate;
 
-  const landValue =
-    landAreaAana * adoptedRate;
+  const landValue = convertToAana(property.landArea.ropani, property.landArea.aana, property.landArea.paisa, property.landArea.dam, "aana") * adoptedRate;
 
   return {
     inputs: {
-      landAreaAana,
+      landArea: property.landArea,
       governmentRate,
       marketRate: adjustedMarketRate,
     },
@@ -208,10 +142,7 @@ export function calculateLandValue(property: PropertyInput): LandResult {
     adoptedRate,
     landValue,
 
-    // If your LandResult type doesn't currently contain these,
-    // add them to the type.
-    amenityScore: amenities.score,
-    amenityAdjustment: amenities.adjustment,
+    amenityAdjustment: amenityAdjustRate,
     originalMarketRate: marketRate,
   };
 }
@@ -243,7 +174,6 @@ export function calculateBuildingValue(
       depreciation: {
         age: 0,
         usefulLife: 50,
-        scrapValue: 0.1,
         annualRate: 0,
         amount: 0,
       },
@@ -259,7 +189,7 @@ export function calculateBuildingValue(
   let civilCost = 0;
 
   const floors = building.floors.map((floor) => {
-    const rate = floor.ratePerSqft ?? building.defaultRatePerSqft;
+    const rate = floor.ratePerSqft ?? 0;
     const cost = floor.area * rate;
     civilCost += cost;
     return {
@@ -270,18 +200,17 @@ export function calculateBuildingValue(
     };
   });
 
-  const sanitaryRate = building.sanitaryRate ?? 0.1;
-  const electricalRate = building.electricalRate ?? 0.08;
+  const sanitaryRate = building.sanitaryRate ?? 0.05;
+  const electricalRate = building.electricalRate ?? 0.05;
 
   const sanitaryCost = civilCost * sanitaryRate;
   const electricalCost = civilCost * electricalRate;
   const grossBuildingCost = civilCost + sanitaryCost + electricalCost;
 
   const usefulLife = building.usefulLife ?? 50;
-  const scrapValue = building.scrapValue ?? 0.1;
-  const depreciationRate = (1 - scrapValue) / usefulLife;
+  const depreciationRate = building.depreciationRate ?? 1 / usefulLife;
   const depreciation = Math.round(
-    grossBuildingCost * depreciationRate * buildingAge,
+    grossBuildingCost * depreciationRate/100 * buildingAge,
   );
   const presentBuildingValue = Math.max(0, grossBuildingCost - depreciation);
 
@@ -295,8 +224,7 @@ export function calculateBuildingValue(
     depreciation: {
       age: buildingAge,
       usefulLife,
-      scrapValue,
-      annualRate: depreciationRate,
+      annualRate: depreciationRate/100,
       amount: depreciation,
     },
     presentBuildingValue,
@@ -312,19 +240,23 @@ export default function valuateProperty(
 ): ValuationResult {
   const land = calculateLandValue(property);
 
-  const building = property.building
-    ? calculateBuildingValue(property)
-    : false;
+  const building = property.building ? calculateBuildingValue(property) : false;
 
   const finalValue =
     land.landValue + (building !== false ? building.presentBuildingValue : 0);
-
+  const landAreaAana= convertToAana(property.landArea.ropani, property.landArea.aana, property.landArea.paisa, property.landArea.dam, "aana")
   return {
     propertyId: property.propertyId,
-    ownerDetails:property.ownerDetails,
-    valuatorDetail:{
-      valuatorName:"Nepal Property Valuation",
-
+    ownerDetails: property.ownerDetails,
+    landArea:{
+      ropani: property.landArea.ropani,
+      aana: property.landArea.aana,
+      paisa: property.landArea.paisa,
+      dam: property.landArea.dam,
+    },
+    landAreaAana: landAreaAana,
+    valuatorDetail: {
+      valuatorName: "Nepal Property Valuation",
     },
     valuationMethod: {
       land: "Weighted Average Method",
@@ -337,10 +269,10 @@ export default function valuateProperty(
     audit: {
       governmentWeight: property.governmentWeight,
       marketWeight: property.marketWeight,
-      sanitaryRate: 0.1,
-      electricalRate: 0.08,
+      sanitaryRate: 0.05,
+      electricalRate: 0.05,
       depreciationMethod: "straight-line",
     },
-    images:property.images,
+    images: property.images,
   };
 }

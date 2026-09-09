@@ -88,3 +88,22 @@ input[type="range"] { accent-color: var(--gold); }
   height: 2px;
   background-color: var(--gold);
 }
+
+
+
+@font-face {
+  font-family: "PoppinsRegular";
+  src: url("/fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+@font-face {
+  font-family: "PoppinsBlack";
+  src: url("/fonts/Poppins-Black.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

@@ -8,9 +8,9 @@ export async function POST(
   try {
     const body = (await req.json()) as PropertyInput;
 
-    if (!body.landAreaAana) {
+    if (!body.landArea || body.landArea.ropani == null || body.landArea.aana == null || body.landArea.paisa == null || body.landArea.dam == null) {
       return NextResponse.json(
-        { error: "landAreaAana is required" },
+        { error: "landArea is required" },
         { status: 400 },
       );
     }
@@ -21,6 +21,7 @@ export async function POST(
         { status: 400 },
       );
     }
+    console.log(body)
 
     const result = valuateProperty(body);
     return NextResponse.json(result);
