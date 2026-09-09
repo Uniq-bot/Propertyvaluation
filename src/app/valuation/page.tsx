@@ -476,7 +476,7 @@ export default function PropertyValuationPage() {
                     label="Phone Number"
                     suffix="phone"
                     placeholder="9876543210"
-                    value={ownerDetail?.ownerNumber ?? 0}
+                    value={ownerDetail?.ownerNumber}
                     onChange={(value) =>
                       setOwnerDetail((prev) => ({
                         ownerName: prev?.ownerName ?? "",
