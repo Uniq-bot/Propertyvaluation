@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { PropertyProvider } from "../../public/context/PropertyContext";
 
 export const metadata: Metadata = {
   title: "Nepal Property Valuation System",
@@ -14,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <PropertyProvider>{children}</PropertyProvider>
+      </body>
     </html>
   );
 }

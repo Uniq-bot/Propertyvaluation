@@ -17,12 +17,11 @@ export function formatPercent(value: number): string {
 }
 
 export function convertToAana(ropani:number, aana:number, paisa:number, dam:number, targetUnit: string) {
-    // First convert everything to Aana
     const totalAana =
         (ropani * 16) +
         aana +
         (paisa / 4) +
         (dam / 16);
 
-    return targetUnit === "aana" ? totalAana : totalAana / 16; // If target unit is Ropani, convert Aana to Ropani
+    return targetUnit === "aana" ? totalAana : totalAana / 16; 
 }

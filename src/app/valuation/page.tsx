@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NumberField } from "@/components/NumberFields";
 import { ResultSection } from "@/components/Result";
+import { useProperty } from "../../../public/context/PropertyContext";
 import {
   DetailRow,
   Field,
@@ -34,6 +35,7 @@ import type {
   PropertyImage,
   PropertyImageType,
   OwnerDetail,
+  ClientDetail,
 } from "@/types";
 import { LandPlot, X } from "lucide-react";
 import { Stepper } from "@/components/Steppers";
@@ -53,14 +55,44 @@ export const FAINT = "#64748b";
 const generatePropertyId = () =>
   `VAL-2026-${Math.floor(100_000 + Math.random() * 900_000)}`;
 
+const createDefaultBuilding = (): Building => ({
+  depreciationRate: 0,
+  sanitaryRate: 0.05,
+  electricalRate: 0.05,
+  usefulLife: 50,
+  floors: [],
+});
+
 const emptyProperty: PropertyInput = {
   propertyId: generatePropertyId(),
+  plotNumber: "",
+  possibleFutureInhanceMents: "",
   ownerDetails: {
     ownerName: "",
     ownerNumber: 0,
     ownerLocation: "",
   },
-  location: { district: "", municipality: "", ward: 1 },
+  clientDetails: {
+    clientName: "",
+    clientAddress: "",
+    ContactNumber: 0,
+  },
+  location: {
+    district: "",
+    municipality: "",
+    ward: 1,
+    latitude: 0,
+    longitude: 0,
+  },
+  boundaryDetails: {
+    east: "",
+    west: "",
+    north: "",
+    south: "",
+  },
+  nearestRoad: "",
+  nearestRoadImage: null as unknown as File,
+  nearestLandMark: "",
   landArea: {
     ropani: 0,
     aana: 0,
@@ -68,22 +100,16 @@ const emptyProperty: PropertyInput = {
     dam: 0,
   },
   governmentRate: 0,
-  governmentWeight: 0,
-  marketWeight: 0,
   marketRate: 0,
+  governmentWeight: 30,
+  marketWeight: 70,
   buildingAge: 0,
-
+  hasBuilding: true,
   structuralAmenities: [],
-
-  building: {
-    depreciationRate: 0,
-    sanitaryRate: 0.05,
-    electricalRate: 0.05,
-    usefulLife: 50,
-    floors: [],
-  },
+  building: createDefaultBuilding(),
 };
 export const STEPS = [
+  "Client Details",
   "Owner Details",
   "Location",
   "Land",
@@ -96,8 +122,21 @@ export type StepIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 // ── Main component ───────────────────────────
 export default function PropertyValuationPage() {
   const router = useRouter();
+  const {
+    property,
+    setProperty,
+    updateProperty,
+    updateLocation,
+    updateLandArea,
+    images,
+    addImage: addPropertyImage,
+    deleteImage: deletePropertyImage,
+  } = useProperty();
 
-  const [property, setProperty] = useState<PropertyInput>(emptyProperty);
+  const [clientDetail, setClientDetail] = useState<ClientDetail>({
+    ...emptyProperty.clientDetails,
+  });
+
   const [ownerDetail, setOwnerDetail] = useState<OwnerDetail>({
     ...emptyProperty.ownerDetails,
   });
@@ -109,11 +148,7 @@ export default function PropertyValuationPage() {
   const [furthestUnlocked, setFurthestUnlocked] = useState<StepIndex>(0);
   const [formOpen, setFormOpen] = useState(true);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [images, setImages] = useState<
-    { name: string; file: File; type: string }[]
-  >([]);
-
-  // console.log(images);
+  // UI-local image state remains for upload previews; the shared property context stores the canonical image list.
   const [factorsField, setFactorsField] = useState<
     { factor: string; observedValue: string; adjustment: number }[]
   >([
@@ -159,7 +194,6 @@ export default function PropertyValuationPage() {
     updateFactordataInProperty(factorsField);
     advance(next);
   };
-  console.log(property);
 
   // Derived selects
   const selectedDistrictInfo = BAGMATI_PROVINCE_DATA.find(
@@ -170,6 +204,8 @@ export default function PropertyValuationPage() {
     (m) => m.name === property.location.municipality,
   );
   const maxWards = selectedMuniInfo?.maxWards ?? 15;
+  const building = property.building ?? createDefaultBuilding();
+  const buildingFloors = building.floors ?? [];
 
   // Validation flags
   const locationDone =
@@ -190,9 +226,11 @@ export default function PropertyValuationPage() {
 
   const buildingDone =
     !includeBuilding ||
-    (property.building !== undefined &&
-      property.building.floors.length > 0 &&
-      property.building.floors.every((f) => f.area > 0 && f.name.trim()));
+    (Array.isArray(buildingFloors) &&
+      buildingFloors.length > 0 &&
+      buildingFloors.every(
+        (f) => f && Number(f.area) > 0 && String(f.name ?? "").trim().length > 0,
+      ));
 
   // Navigation
   const goTo = (target: StepIndex) => {
@@ -207,27 +245,19 @@ export default function PropertyValuationPage() {
   };
 
   // Updaters
-  const updateProperty = <K extends keyof PropertyInput>(
-    key: K,
-    value: PropertyInput[K],
-  ) => {
-    setProperty((prev) => ({ ...prev, [key]: value }));
-  };
-  const updatePropertyLandArea = (
-    key: keyof PropertyInput["landArea"],
-    value: number,
-  ) => {
-    setProperty((prev) => ({
-      ...prev,
-      landArea: { ...prev.landArea, [key]: value },
-    }));
-  };
-
   const updatePropertyBuilding = (key: keyof Building, value: any) => {
     setProperty((prev) => ({
       ...prev,
-      building: { ...prev.building!, [key]: value },
+      building: { ...(prev.building ?? createDefaultBuilding()), [key]: value },
     }));
+  };
+  const updateClientDetail = (detail: ClientDetail) => {
+    setProperty((prev) => ({
+      ...prev,
+      clientDetails: detail,
+    }));
+
+    advance(0);
   };
 
   const updatePropertyOwnerDetails = (ownerDetails: OwnerDetail) => {
@@ -236,46 +266,15 @@ export default function PropertyValuationPage() {
       ownerDetails: ownerDetails,
     }));
 
-    advance(0);
+    advance(1);
   };
 
-  const updateLocation = <K extends keyof Location>(
-    key: K,
-    value: Location[K],
-  ) =>
-    setProperty((prev) => ({
-      ...prev,
-      location: { ...prev.location, [key]: value },
-    }));
-
-  const updateBuilding = <K extends keyof Building>(
-    key: K,
-    value: Building[K],
-  ) =>
-    setProperty((prev) => ({
-      ...prev,
-      building: { ...prev.building!, [key]: value },
-    }));
-  // const updateAmenity = <
-  //   K extends keyof NonNullable<PropertyInput["structuralAmenities"]>,
-  // >(
-  //   key: K,
-  //   value: NonNullable<PropertyInput["structuralAmenities"]>[K],
-  // ) => {
-  //   setProperty((prev) => ({
-  //     ...prev,
-  //     structuralAmenities: {
-  //       ...prev.structuralAmenities,
-  //       [key]: value,
-  //     },
-  //   }));
-  // };
   const updateFloor = (index: number, area: number) =>
     setProperty((prev) => ({
       ...prev,
       building: {
-        ...prev.building!,
-        floors: prev.building!.floors.map((f, i) =>
+        ...(prev.building ?? createDefaultBuilding()),
+        floors: (prev.building?.floors ?? []).map((f, i) =>
           i === index ? { ...f, area } : f,
         ),
       },
@@ -284,8 +283,8 @@ export default function PropertyValuationPage() {
     setProperty((prev) => ({
       ...prev,
       building: {
-        ...prev.building!,
-        floors: prev.building!.floors.map((f, i) =>
+        ...(prev.building ?? createDefaultBuilding()),
+        floors: (prev.building?.floors ?? []).map((f, i) =>
           i === index ? { ...f, ratePerSqft: rate } : f,
         ),
       },
@@ -295,8 +294,8 @@ export default function PropertyValuationPage() {
     setProperty((prev) => ({
       ...prev,
       building: {
-        ...prev.building!,
-        floors: prev.building!.floors.map((f, i) =>
+        ...(prev.building ?? createDefaultBuilding()),
+        floors: (prev.building?.floors ?? []).map((f, i) =>
           i === index ? { ...f, name } : f,
         ),
       },
@@ -304,7 +303,8 @@ export default function PropertyValuationPage() {
 
   const addFloor = () =>
     setProperty((prev) => {
-      const n = prev.building!.floors.length;
+      const currentBuilding = prev.building ?? createDefaultBuilding();
+      const n = currentBuilding.floors.length;
       const defaultName =
         n === 0
           ? "Ground Floor"
@@ -316,20 +316,18 @@ export default function PropertyValuationPage() {
       return {
         ...prev,
         building: {
-          ...prev.building!,
+          ...currentBuilding,
           floors: [
-            ...prev.building!.floors,
+            ...currentBuilding.floors,
             { name: defaultName, area: 0, ratePerSqft: 0 },
           ],
         },
       };
     });
-  const upDateImageToProperty = (
-    images: { name: string; file: File; type: string }[],
-  ) => {
+  const upDateImageToProperty = (nextImages: PropertyImage[]) => {
     setProperty((prev) => ({
       ...prev,
-      images: [...(prev.images ?? []), ...images],
+      images: [...(prev.images ?? []), ...nextImages],
     }));
 
     advance(5);
@@ -343,60 +341,70 @@ export default function PropertyValuationPage() {
 
     if (files.length === 0) return;
 
-    setImages((prev) => {
+    const nextImageList: PropertyImage[] = [];
+
+    for (const file of files) {
+      const image: PropertyImage = {
+        name: file.name,
+        file,
+        type,
+      };
+
       if (type === "physical") {
-        const existingPhysical = prev.filter((img) => img.type === "physical");
-
-        const otherImages = prev.filter((img) => img.type !== "physical");
-
-        const remainingSlots = 4 - existingPhysical.length;
-
-        const newImages = files.slice(0, remainingSlots).map((file) => ({
-          name: file.name,
-          file,
-          type: "physical" as const,
-        }));
-
-        return [...otherImages, ...existingPhysical, ...newImages];
+        const existingPhysical = images.filter(
+          (img) => img.type === "physical",
+        );
+        if (existingPhysical.length >= 4) {
+          continue;
+        }
       }
 
-      // Satellite / trace = only one
-      const filtered = prev.filter((img) => img.type !== type);
-
-      return [
-        ...filtered,
-        {
-          name: files[0].name,
-          file: files[0],
-          type,
-        },
-      ];
-    });
-
-    // Reset input so the same file can be selected again
-    e.target.value = "";
-  };
- const deleteImage = (type: any, index?: number) => {
-  setImages((prev) => {
-    if (type === "physical" && index !== undefined) {
-      const physicalImages = prev.filter(
-        (img) => img.type === "physical"
-      );
-
-      const imageToDelete = physicalImages[index];
-
-      return prev.filter((img) => img !== imageToDelete);
+      nextImageList.push(image);
     }
 
-    return prev.filter((img) => img.type !== type);
-  });
-};
+    if (type === "physical") {
+      const filtered = images.filter((img) => img.type !== "physical");
+      const merged = [...filtered, ...nextImageList];
+      setProperty((prev) => ({
+        ...prev,
+        images: merged.slice(0, 4),
+      }));
+    } else {
+      const filtered = images.filter((img) => img.type !== type);
+      setProperty((prev) => ({
+        ...prev,
+        images: [...filtered, ...nextImageList],
+      }));
+    }
+
+    e.target.value = "";
+  };
+  const deleteImage = (type: PropertyImageType, index?: number) => {
+    const nextImages = [...(images ?? [])];
+    if (type === "physical" && index !== undefined) {
+      const physicalImages = nextImages.filter(
+        (img) => img.type === "physical",
+      );
+      const imageToDelete = physicalImages[index];
+      if (!imageToDelete) return;
+      setProperty((prev) => ({
+        ...prev,
+        images: prev.images?.filter((img) => img !== imageToDelete) ?? [],
+      }));
+      return;
+    }
+
+    setProperty((prev) => ({
+      ...prev,
+      images: prev.images?.filter((img) => img.type !== type) ?? [],
+    }));
+  };
   const removeFloor = (index: number) =>
     setProperty((prev) => ({
       ...prev,
       building: {
-        ...prev.building!,
-        floors: prev.building!.floors.filter((_, i) => i !== index),
+        ...(prev.building ?? createDefaultBuilding()),
+        floors: (prev.building?.floors ?? []).filter((_, i) => i !== index),
       },
     }));
 
@@ -455,6 +463,77 @@ export default function PropertyValuationPage() {
               furthestUnlocked={furthestUnlocked}
             />
             {step === 0 && (
+              <StepCard
+                title="Client's Details"
+                helper="Who is the Client? This is the person who is requesting the valuation."
+              >
+                <div className="flex flex-col gap-4 sm:gap-5">
+                  <Field
+                    label="Client Name"
+                    value={clientDetail?.clientName ?? ""}
+                    placeholder="e.g. John Doe"
+                    onChange={(value) =>
+                      setClientDetail((prev) => ({
+                        clientName: value ?? "",
+                        clientAddress: prev?.clientAddress ?? "",
+                        ContactNumber: prev?.ContactNumber ?? 0,
+                      }))
+                    }
+                  />
+                  <NumberField
+                    label="Phone Number"
+                    suffix="phone"
+                    placeholder="9876543210"
+                    value={clientDetail?.ContactNumber}
+                    onChange={(value) =>
+                      setClientDetail((prev) => ({
+                        clientName: prev?.clientName ?? "",
+                        clientAddress: prev?.clientAddress ?? "",
+                        ContactNumber: value,
+                      }))
+                    }
+                  />
+                  <Field
+                    label="Client Address"
+                    value={clientDetail?.clientAddress ?? ""}
+                    placeholder="e.g. Bhaktapur, Nepal"
+                    onChange={(value) =>
+                      setClientDetail((prev) => ({
+                        clientAddress: value,
+                        ContactNumber: prev?.ContactNumber ?? 0,
+                        clientName: prev?.clientName ?? "",
+                      }))
+                    }
+                  />
+                </div>
+                <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  {!locationDone ? (
+                    <p
+                      className="text-[11px] sm:text-xs"
+                      style={{ color: "#94a3b8" }}
+                    >
+                      Fill owner details to continue
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <button
+                    type="button"
+                    disabled={
+                      !clientDetail?.ContactNumber ||
+                      !clientDetail?.clientAddress ||
+                      !clientDetail?.clientName
+                    }
+                    onClick={() => updateClientDetail(clientDetail)}
+                    className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
+                    style={{ color: NAVY }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </StepCard>
+            )}
+            {step === 1 && (
               <StepCard
                 title="Owner's Details"
                 helper="Who is the owner of the Property? Determine"
@@ -526,36 +605,48 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {step === 1 && (
+            {step === 2 && (
               <StepCard
-                title="Where is the property?"
-                helper="This determines the government rate band and local context used later."
+                title="Property Details"
+                helper="Property location, plot number, four boundaries details and nearest road/landmark."
               >
                 <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
-                  <div className="flex flex-col items-stretch gap-2 sm:col-span-2 sm:flex-row sm:items-end">
-                    <div className="flex-1">
+                  <div className="flex items-center justify-between col-span-2">
+                    <div className="flex flex-col items-stretch gap-2 sm:col-span-2 sm:flex-row sm:items-end">
+                      <div className="flex items-center justify-between">
+                        <Field
+                          label="Property reference"
+                          value={property.propertyId}
+                          placeholder="e.g. VAL-2026-839201"
+                          onChange={(value) =>
+                            updateProperty("propertyId", value)
+                          }
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateProperty("propertyId", generatePropertyId())
+                        }
+                        className="w-full rounded border h-full px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
+                        style={{ borderColor: BORDER, color: NAVY }}
+                      >
+                        Generate new ID
+                      </button>
+                    </div>
+                    <div className="w-1/2">
                       <Field
-                        label="Property reference"
-                        value={property.propertyId}
-                        placeholder="e.g. VAL-2026-839201"
+                        label="Plot Number"
+                        value={property.plotNumber}
+                        placeholder="e.g. 100"
                         onChange={(value) =>
-                          updateProperty("propertyId", value)
+                          updateProperty("plotNumber", value)
                         }
                       />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateProperty("propertyId", generatePropertyId())
-                      }
-                      className="w-full rounded border px-3 py-2.5 text-xs font-semibold transition hover:bg-[#f7f3ea] sm:w-auto"
-                      style={{ borderColor: BORDER, color: NAVY }}
-                    >
-                      Generate new ID
-                    </button>
                   </div>
 
-                  <div className="sm:col-span-2">
+                  <div className="">
                     <label
                       className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
                       style={{ color: MUTED }}
@@ -671,6 +762,110 @@ export default function PropertyValuationPage() {
                       )}
                     </select>
                   </div>
+
+                  <NumberField
+                    label="Latitude"
+                    placeholder="e.g. 27.7172"
+                    value={property.location.latitude}
+                    onChange={(value) => updateLocation("latitude", value)}
+                  />
+                  <NumberField
+                    label="Longitude"
+                    placeholder="e.g. 85.3240"
+                    value={property.location.longitude}
+                    onChange={(value) => updateLocation("longitude", value)}
+                  />
+
+                  <Field
+                    label="Nearest Road"
+                    value={property.nearestRoad}
+                    placeholder="e.g. Ring Road"
+                    onChange={(value) => updateProperty("nearestRoad", value)}
+                  />
+                  <Field
+                    label="Nearest Landmark"
+                    value={property.nearestLandMark}
+                    placeholder="e.g. Boudhanath Stupa"
+                    onChange={(value) =>
+                      updateProperty("nearestLandMark", value)
+                    }
+                  />
+                </div>
+                <div
+                  className="mt-5 sm:mt-6 overflow-hidden rounded-xl border"
+                  style={{ borderColor: BORDER }}
+                >
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-130 border-collapse text-left">
+                      <thead>
+                        <tr style={{ backgroundColor: "#faf8f1" }}>
+                          <th
+                            className="w-16 border-b px-3 py-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
+                            style={{ borderColor: BORDER, color: MUTED }}
+                          >
+                            S.N
+                          </th>
+                          <th
+                            className="border-b px-3 py-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
+                            style={{ borderColor: BORDER, color: MUTED }}
+                          >
+                            Boundary
+                          </th>
+                          <th
+                            className="border-b px-3 py-3 text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
+                            style={{ borderColor: BORDER, color: MUTED }}
+                          >
+                            Boundary Details
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { key: "east", label: "East" },
+                          { key: "west", label: "West" },
+                          { key: "north", label: "North" },
+                          { key: "south", label: "South" },
+                        ].map(({ key, label }, index) => (
+                          <tr key={key} className="bg-white">
+                            <td
+                              className="border-b px-3 py-3 align-top text-xs sm:text-sm font-semibold text-gray-900"
+                              style={{ borderColor: BORDER }}
+                            >
+                              {index + 1}
+                            </td>
+                            <td
+                              className="border-b px-3 py-3 align-top text-xs sm:text-sm font-semibold text-gray-900"
+                              style={{ borderColor: BORDER }}
+                            >
+                              {label}
+                            </td>
+                            <td
+                              className="border-b px-3 py-3 align-top"
+                              style={{ borderColor: BORDER }}
+                            >
+                              <input
+                                type="text"
+                                className="w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none transition focus:ring-2"
+                                style={{ borderColor: BORDER }}
+                                placeholder="e.g. Plot of the property or Road"
+                                value={
+                                  property.boundaryDetails[
+                                    key as keyof typeof property.boundaryDetails
+                                  ]
+                                }
+                                onChange={(e) =>
+                                  updateProperty("boundaryDetails", {
+                                    ...property.boundaryDetails,
+                                    [key]: e.target.value,
+                                  })
+                                }
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
 
                 <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -687,7 +882,7 @@ export default function PropertyValuationPage() {
                   <button
                     type="button"
                     disabled={!locationDone}
-                    onClick={() => advance(1)}
+                    onClick={() => advance(2)}
                     className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                     style={{ color: NAVY }}
                   >
@@ -697,7 +892,7 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <StepCard
                 title="Land details"
                 helper="We blend the government-listed rate with the going market rate — the market rate counts for more since it reflects real conditions."
@@ -708,30 +903,28 @@ export default function PropertyValuationPage() {
                     suffix="ropani"
                     placeholder="e.g. 8.5"
                     value={property.landArea.ropani}
-                    onChange={(value) =>
-                      updatePropertyLandArea("ropani", value)
-                    }
+                    onChange={(value) => updateLandArea("ropani", value)}
                   />
                   <NumberField
                     label="Aana"
                     suffix="aana"
                     placeholder="e.g. 8.5"
                     value={property.landArea.aana}
-                    onChange={(value) => updatePropertyLandArea("aana", value)}
+                    onChange={(value) => updateLandArea("aana", value)}
                   />
                   <NumberField
                     label="Paisa"
                     suffix="paisa"
                     placeholder="e.g. 8.5"
                     value={property.landArea.paisa}
-                    onChange={(value) => updatePropertyLandArea("paisa", value)}
+                    onChange={(value) => updateLandArea("paisa", value)}
                   />
                   <NumberField
                     label="Dam"
                     suffix="dam"
                     placeholder="e.g. 8.5"
                     value={property.landArea.dam}
-                    onChange={(value) => updatePropertyLandArea("dam", value)}
+                    onChange={(value) => updateLandArea("dam", value)}
                   />
                 </div>
 
@@ -812,182 +1005,6 @@ export default function PropertyValuationPage() {
                       </div>
                     </div>
                   </div>
-                  {/* Property Factors */}
-                  <div
-                    className="mt-4 sm:mt-6 rounded-xl border p-3 sm:p-5"
-                    style={{ borderColor: BORDER }}
-                  >
-                    {/* Header */}
-                    <div className="mb-4 sm:mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-900">
-                          Property factors
-                        </h3>
-
-                        <p
-                          className="mt-1 text-xs sm:text-sm leading-relaxed"
-                          style={{ color: MUTED }}
-                        >
-                          Add local factors that can affect the property's
-                          market value.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="w-fit rounded-md bg-gold-gradient px-3.5 py-2.5 text-xs sm:text-sm font-bold text-gray-900 transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
-                        onClick={addFactorField}
-                      >
-                        + Add Field
-                      </button>
-                    </div>
-
-                    {/* Table wrapper for mobile scrolling */}
-                    <div
-                      className="overflow-x-auto rounded-lg border"
-                      style={{ borderColor: BORDER }}
-                    >
-                      <table className="w-full min-w-[700px] border-collapse text-left">
-                        <thead>
-                          <tr
-                            className="border-b"
-                            style={{
-                              borderColor: BORDER,
-                              backgroundColor: "#faf8f1",
-                            }}
-                          >
-                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
-                              Factor / Amenity
-                            </th>
-
-                            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
-                              Observed Value
-                            </th>
-
-                            {/* <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
-                              Adjustment
-                            </th> */}
-
-                            <th className="w-24 px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
-                              Action
-                            </th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {factorsField.map((factor, index) => {
-                            const selectedFactor = PROPERTY_FACTORS.find(
-                              (item) => item.value === factor.factor,
-                            );
-
-                            return (
-                              <tr
-                                key={index}
-                                className="border-b last:border-b-0 transition-colors hover:bg-gray-50"
-                                style={{ borderColor: BORDER }}
-                              >
-                                {/* Factor */}
-                                <td className="px-3 py-3">
-                                  <select
-                                    value={factor.factor}
-                                    onChange={(e) =>
-                                      updateFactorField(
-                                        index,
-                                        "factor",
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition"
-                                    style={{ borderColor: BORDER }}
-                                  >
-                                    <option value="null">
-                                      - Select the Factor -
-                                    </option>
-
-                                    {PROPERTY_FACTORS.map((item) => (
-                                      <option
-                                        key={item.value}
-                                        value={item.value}
-                                      >
-                                        {item.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </td>
-
-                                {/* Observed Value */}
-                                <td className="px-3 py-3">
-                                  <input
-                                    disabled={factor.factor === "null"}
-                                    type="text"
-                                    value={factor.observedValue}
-                                    onChange={(e) =>
-                                      updateFactorField(
-                                        index,
-                                        "observedValue",
-                                        e.target.value,
-                                      )
-                                    }
-                                    placeholder={
-                                      selectedFactor?.placeholder ||
-                                      "Enter observed value"
-                                    }
-                                    className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none"
-                                    style={{ borderColor: BORDER }}
-                                  />
-                                </td>
-
-                                {/* Adjustment
-                                <td>
-                                  <input
-                                    disabled={
-                                      factorsField[index].factor === "null"
-                                    }
-                                    type="number"
-                                    value={factor.adjustment}
-                                    onChange={(e) =>
-                                      updateFactorField(
-                                        index,
-                                        "adjustment",
-                                        e.target.value === ""
-                                          ? ""
-                                          : Number(e.target.value),
-                                      )
-                                    }
-                                    placeholder="e.g. -5 or 5"
-                                    className="w-full rounded-md border bg-white px-3 py-2.5 pr-9 text-sm text-gray-900 outline-none transition focus:ring-2"
-                                    style={{
-                                      borderColor: BORDER,
-                                    }}
-                                  />
-
-                                  <span
-                                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm"
-                                    style={{ color: FAINT }}
-                                  >
-                                    %
-                                  </span>
-                                </td> */}
-
-                                {/* Action */}
-                                <td className="px-3 py-3">
-                                  <button
-                                    type="button"
-                                    disabled={factorsField.length === 1}
-                                    onClick={() => deleteFactorField(index)}
-                                    className="rounded-md border px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"
-                                    style={{ borderColor: BORDER }}
-                                  >
-                                    Delete
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
 
                   {/* Market Rate */}
                   <div
@@ -1066,6 +1083,172 @@ export default function PropertyValuationPage() {
                       </div>
                     </div>
                   </div>
+                  {/* Property Factors */}
+                  <div
+                    className="mt-4 sm:mt-6 rounded-xl border p-3 sm:p-5"
+                    style={{ borderColor: BORDER }}
+                  >
+                    <div>
+                      {/* Header */}
+                      <div className="mb-4 sm:mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                            Property factors
+                          </h3>
+
+                          <p
+                            className="mt-1 text-xs sm:text-sm leading-relaxed"
+                            style={{ color: MUTED }}
+                          >
+                            Add local factors that can affect the property's
+                            market value.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="w-fit rounded-md bg-gold-gradient px-3.5 py-2.5 text-xs sm:text-sm font-bold text-gray-900 transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                          onClick={addFactorField}
+                        >
+                          + Add Field
+                        </button>
+                      </div>
+
+                      {/* Table wrapper for mobile scrolling */}
+                      <div
+                        className="overflow-x-auto rounded-lg border"
+                        style={{ borderColor: BORDER }}
+                      >
+                        <table className="w-full min-w-175 border-collapse text-left">
+                          <thead>
+                            <tr
+                              className="border-b"
+                              style={{
+                                borderColor: BORDER,
+                                backgroundColor: "#faf8f1",
+                              }}
+                            >
+                              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                                Factor / Amenity
+                              </th>
+
+                              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                                Observed Value
+                              </th>
+
+                              {/* <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                              Adjustment
+                            </th> */}
+
+                              <th className="w-24 px-4 py-3 text-xs font-bold uppercase tracking-wide text-gray-700">
+                                Action
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {factorsField.map((factor, index) => {
+                              const selectedFactor = PROPERTY_FACTORS.find(
+                                (item) => item.value === factor.factor,
+                              );
+
+                              return (
+                                <tr
+                                  key={index}
+                                  className="border-b last:border-b-0 transition-colors hover:bg-gray-50"
+                                  style={{ borderColor: BORDER }}
+                                >
+                                  {/* Factor */}
+                                  <td className="px-3 py-3">
+                                    <select
+                                      value={factor.factor}
+                                      onChange={(e) =>
+                                        updateFactorField(
+                                          index,
+                                          "factor",
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition"
+                                      style={{ borderColor: BORDER }}
+                                    >
+                                      <option value="null">
+                                        - Select the Factor -
+                                      </option>
+
+                                      {PROPERTY_FACTORS.map((item) => (
+                                        <option
+                                          key={item.value}
+                                          value={item.value}
+                                        >
+                                          {item.label}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+
+                                  {/* Observed Value */}
+                                  <td className="px-3 py-3">
+                                    <input
+                                      disabled={factor.factor === "null"}
+                                      type="text"
+                                      value={factor.observedValue}
+                                      onChange={(e) =>
+                                        updateFactorField(
+                                          index,
+                                          "observedValue",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder={
+                                        selectedFactor?.placeholder ||
+                                        "Enter observed value"
+                                      }
+                                      className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none"
+                                      style={{ borderColor: BORDER }}
+                                    />
+                                  </td>
+
+                                  {/* Action */}
+                                  <td className="px-3 py-3">
+                                    <button
+                                      type="button"
+                                      disabled={factorsField.length === 1}
+                                      onClick={() => deleteFactorField(index)}
+                                      className="rounded-md border px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-30"
+                                      style={{ borderColor: BORDER }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    {/* Possible future enhancements */}
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900">
+                        Possible Future Enhancements
+                      </h3>
+                      <div>
+                        <textarea
+                          placeholder="Describe potential future enhancements..."
+                          className="w-full rounded-md border bg-white px-3 py-2.5 text-sm text-gray-900 outline-none"
+                          style={{ borderColor: BORDER }}
+                          value={property.possibleFutureInhanceMents}
+                          onChange={(e) => {
+                            setProperty({
+                              ...property,
+                              possibleFutureInhanceMents: e.target.value,
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -1089,7 +1272,7 @@ export default function PropertyValuationPage() {
                     <button
                       type="button"
                       disabled={!landDone}
-                      onClick={() => handleNext(2)}
+                      onClick={() => handleNext(3)}
                       className="bg-gold-gradient rounded-md py-2.5 px-3 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
@@ -1100,7 +1283,7 @@ export default function PropertyValuationPage() {
               </StepCard>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <StepCard title="Is there a building on this land?">
                 <div className="flex flex-col sm:flex-row gap-3">
                   {[true, false].map((val) => (
@@ -1157,7 +1340,7 @@ export default function PropertyValuationPage() {
                         </button>
                       </div>
 
-                      {property.building?.floors.length === 0 ? (
+                      {buildingFloors.length === 0 ? (
                         <div
                           className="rounded border border-dashed p-5 sm:p-6 text-center text-xs sm:text-sm"
                           style={{ borderColor: BORDER, color: MUTED }}
@@ -1167,7 +1350,7 @@ export default function PropertyValuationPage() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {property.building?.floors.map((floor, index) => (
+                          {buildingFloors.map((floor, index) => (
                             <div
                               key={index}
                               className="flex flex-col gap-3 rounded border p-3 sm:p-4 sm:flex-row sm:items-center"
@@ -1243,7 +1426,7 @@ export default function PropertyValuationPage() {
                 <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setStep(2)}
+                    onClick={() => setStep(3)}
                     className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                     style={{ color: MUTED }}
                   >
@@ -1262,7 +1445,7 @@ export default function PropertyValuationPage() {
                     <button
                       type="button"
                       disabled={!buildingDone}
-                      onClick={() => advance(3)}
+                      onClick={() => advance(4)}
                       className="bg-gold-gradient rounded-md py-2.5 px-4 text-xs sm:text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40"
                       style={{ color: NAVY }}
                     >
@@ -1272,7 +1455,7 @@ export default function PropertyValuationPage() {
                 </div>
               </StepCard>
             )}
-            {step === 4 && (
+            {step === 5 && (
               <StepCard
                 title="Add Images"
                 helper="Upload images of the property to enhance the valuation."
@@ -1455,13 +1638,84 @@ export default function PropertyValuationPage() {
                         </div>
                       );
                     })}
+                    {/* Nearest Road Image */}
+                    <div className="rounded border border-[#e8dfc8] bg-[#fffdf8] p-3 sm:p-4">
+                      <div className="mb-3">
+                        <p className="text-xs sm:text-sm font-bold text-[#10151f]">
+                          Nearest Road Image
+                        </p>
+                        <p className="mt-1 text-[11px] sm:text-xs text-[#64748b]">
+                          Upload a photo of the nearest access road.
+                        </p>
+                      </div>
+
+                      {property.nearestRoadImage ? (
+                        <div className="relative">
+                          <img
+                            src={URL.createObjectURL(property.nearestRoadImage)}
+                            alt="Nearest road"
+                            className="h-40 sm:h-48 w-full rounded object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateProperty(
+                                "nearestRoadImage",
+                                undefined as unknown as File,
+                              )
+                            }
+                            className="absolute right-2 top-2 rounded-full bg-white p-1.5 text-red-600 shadow-md transition hover:bg-red-50"
+                            aria-label="Remove nearest road image"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                          <label className="mt-3 flex cursor-pointer items-center justify-center rounded border border-[#e8dfc8] bg-white px-3 py-2 text-[11px] sm:text-xs font-semibold text-[#475569] transition hover:bg-[#f7f3ea]">
+                            Replace Image
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file)
+                                  updateProperty("nearestRoadImage", file);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        </div>
+                      ) : (
+                        <label className="flex h-40 sm:h-48 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-[#e8dfc8] bg-white transition hover:border-[#d6a936] hover:bg-[#fdfbf5]">
+                          <div className="mb-2 rounded-full bg-[#f7f3ea] p-3">
+                            <LandPlot className="h-5 w-5 text-[#8a5a00]" />
+                          </div>
+                          <p className="text-xs sm:text-sm font-semibold text-[#10151f]">
+                            Upload Image
+                          </p>
+                          <p className="mt-1 text-[10px] sm:text-[11px] text-[#64748b]">
+                            PNG, JPG or WEBP
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file)
+                                updateProperty("nearestRoadImage", file);
+                              e.target.value = "";
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   {/* Bottom Actions */}
                   <div className="mt-2 sm:mt-4 flex flex-col-reverse sm:flex-row w-full items-stretch sm:items-center justify-between gap-3">
                     <button
                       type="button"
-                      onClick={() => setStep(2)}
+                      onClick={() => setStep(4)}
                       className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                       style={{ color: MUTED }}
                     >
@@ -1490,28 +1744,38 @@ export default function PropertyValuationPage() {
                 <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm">
                   {[
                     {
+                      label: "Client",
+                      text: `${property.clientDetails.clientName} · ${property.clientDetails.clientAddress}`,
+                      editStep: 0,
+                    },
+                    {
+                      label: "Owner",
+                      text: `${property.ownerDetails.ownerName} · ${property.ownerDetails.ownerLocation}`,
+                      editStep: 1,
+                    },
+                    {
                       label: "Location",
                       text: `${property.location.municipality}, Ward ${property.location.ward}, ${property.location.district}`,
-                      editStep: 0,
+                      editStep: 2,
                     },
                     {
                       label: "Land",
                       text: `${formatNumber(convertToAana(property.landArea.ropani, property.landArea.aana, property.landArea.paisa, property.landArea.dam, "aana"))} aana · government ${formatNPR(property.governmentRate)} · market ${formatNPR(property.marketRate)}`,
-                      editStep: 1,
+                      editStep: 3,
                     },
                     {
                       label: "Building",
                       text: includeBuilding
-                        ? `${property.building?.floors.length ?? 0} floor${
-                            property.building?.floors.length === 1 ? "" : "s"
+                        ? `${buildingFloors.length} floor${
+                            buildingFloors.length === 1 ? "" : "s"
                           }, ${formatNumber(
-                            property.building?.floors.reduce(
+                            buildingFloors.reduce(
                               (s, f) => s + (f.area || 0),
                               0,
                             ) ?? 0,
                           )} sqft total`
                         : "Not included — land only",
-                      editStep: 2,
+                      editStep: 4,
                     },
                   ].map(({ label, text, editStep }) => (
                     <div
@@ -1548,7 +1812,7 @@ export default function PropertyValuationPage() {
                 <div className="mt-5 sm:mt-7 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(5)}
                     className="text-xs sm:text-sm font-medium underline decoration-[#e8dfc8] underline-offset-4 text-left"
                     style={{ color: MUTED }}
                   >
@@ -1615,7 +1879,7 @@ export default function PropertyValuationPage() {
                 Total property value
               </p>
               <p
-                className="mt-2 font-[PoppinsRegular] text-2xl sm:text-4xl md:text-5xl font-bold break-words"
+                className="mt-2 font-[PoppinsRegular] text-2xl sm:text-4xl md:text-5xl font-bold wrap-break-word"
                 style={{ color: NAVY }}
               >
                 {formatNPR(result.finalValue)}
@@ -1880,7 +2144,7 @@ export default function PropertyValuationPage() {
                         </div>
 
                         <div className="mt-5 sm:mt-6 overflow-x-auto">
-                          <table className="w-full min-w-[500px] text-xs sm:text-sm">
+                          <table className="w-full min-w-125 text-xs sm:text-sm">
                             <thead>
                               <tr
                                 className="text-left text-[10px] sm:text-xs font-semibold uppercase tracking-wide"
@@ -1977,7 +2241,7 @@ export default function PropertyValuationPage() {
                         description="How building depreciation was applied."
                       >
                         <div className="overflow-x-auto">
-                          <table className="w-full min-w-[500px] text-xs sm:text-sm">
+                          <table className="w-full min-w-125 text-xs sm:text-sm">
                             <tbody>
                               <DetailRow
                                 label="Building age"
@@ -2050,7 +2314,7 @@ export default function PropertyValuationPage() {
         )}
       </div>
 
-      {result && (
+      {result && isReportOpen && (
         <ValuationReportModal
           isOpen={isReportOpen}
           onClose={() => setIsReportOpen(false)}

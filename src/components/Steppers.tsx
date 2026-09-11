@@ -23,7 +23,7 @@ export function Stepper({
               type="button"
               disabled={locked}
               onClick={() => onJump(idx)}
-              className={`flex w-full items-center justify-center gap-1.5 sm:gap-2 rounded px-1.5 sm:px-2.5 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold transition sm:px-3 ${
+              className={`flex w-full items-center justify-center gap-1.5 sm:gap-2 rounded px-1.5 sm:px-3 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold transition ${
                 locked
                   ? "cursor-not-allowed opacity-50"
                   : "cursor-pointer hover:opacity-90"

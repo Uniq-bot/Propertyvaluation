@@ -11,7 +11,7 @@ const TEXT = "#10151f";
 
 export default function Home() {
   return (
-    <main className="min-h-screen" style={{ background: BG, color: TEXT }}>
+    <main className="min-h-screen" >
       {/* Hero */}
       <section
         className="relative overflow-hidden"

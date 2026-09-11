@@ -97,34 +97,40 @@ function calculateAmenityWeight(property: PropertyInput) {
 
   let totalScore = 0;
 
-  const totalAmenityWeight = amenities.reduce(
-    (sum, amenity) => sum + amenity.adjustment,
-    totalScore,
-  )/100
+  const totalAmenityWeight =
+    amenities.reduce(
+      (sum, amenity) => sum + (amenity.adjustment ?? 0),
+      totalScore,
+    ) / 100;
   console.log(totalAmenityWeight);
-
-  
 
   return totalAmenityWeight;
 }
 
 export function calculateLandValue(property: PropertyInput): LandResult {
-  const {
-    governmentRate,
-    marketRate,
-    governmentWeight,
-    marketWeight,
-  } = property;
+  const { governmentRate, marketRate, governmentWeight, marketWeight } =
+    property;
 
   // Calculate property-specific amenity score
   const amenityAdjustRate = calculateAmenityWeight(property);
   const adjustedMarketRate = marketRate * (1 + amenityAdjustRate);
+  // Compute weighted average of government and market rates. Use weight sum
+  // as denominator to support non-100 weight inputs.
+  const weightSum = governmentWeight + marketWeight || 100;
   const weightedRate =
-    governmentRate * governmentWeight + adjustedMarketRate * marketWeight;
+    (governmentRate * governmentWeight + adjustedMarketRate * marketWeight) /
+    weightSum;
 
   const adoptedRate = property.adoptedLandRate ?? weightedRate;
 
-  const landValue = convertToAana(property.landArea.ropani, property.landArea.aana, property.landArea.paisa, property.landArea.dam, "aana") * adoptedRate;
+  const landValue =
+    convertToAana(
+      property.landArea.ropani,
+      property.landArea.aana,
+      property.landArea.paisa,
+      property.landArea.dam,
+      "aana",
+    ) * adoptedRate;
 
   return {
     inputs: {
@@ -158,12 +164,7 @@ export function calculateBuildingValue(
   const { building, buildingAge = 0 } = property;
 
   // Return zero-value result when there is no building
-  if (
-    !building ||
-    !building.floors ||
-    building.floors.length === 0 ||
-    property.hasBuilding === false
-  ) {
+  if (!building || !building.floors || building.floors.length === 0) {
     return {
       totalFloorArea: 0,
       floors: [],
@@ -208,10 +209,19 @@ export function calculateBuildingValue(
   const grossBuildingCost = civilCost + sanitaryCost + electricalCost;
 
   const usefulLife = building.usefulLife ?? 50;
-  const depreciationRate = building.depreciationRate ?? 1 / usefulLife;
+
+  // depreciationRate stored in the UI is a percent (e.g. 5 for 5%).
+  // If not provided, default to straight-line percent = 100 / usefulLife.
+  const depreciationRate =
+    building.depreciationRate && building.depreciationRate > 0
+      ? building.depreciationRate
+      : 100 / usefulLife;
+
+  const annualPercent = depreciationRate; // percent value
   const depreciation = Math.round(
-    grossBuildingCost * depreciationRate/100 * buildingAge,
+    (grossBuildingCost * (annualPercent / 100)) * buildingAge,
   );
+
   const presentBuildingValue = Math.max(0, grossBuildingCost - depreciation);
 
   return {
@@ -221,12 +231,12 @@ export function calculateBuildingValue(
     sanitary: { rate: sanitaryRate, cost: sanitaryCost },
     electrical: { rate: electricalRate, cost: electricalCost },
     grossBuildingCost,
-    depreciation: {
-      age: buildingAge,
-      usefulLife,
-      annualRate: depreciationRate/100,
-      amount: depreciation,
-    },
+      depreciation: {
+        age: buildingAge,
+        usefulLife,
+        annualRate: annualPercent / 100,
+        amount: depreciation,
+      },
     presentBuildingValue,
   };
 }
@@ -244,20 +254,30 @@ export default function valuateProperty(
 
   const finalValue =
     land.landValue + (building !== false ? building.presentBuildingValue : 0);
-  const landAreaAana= convertToAana(property.landArea.ropani, property.landArea.aana, property.landArea.paisa, property.landArea.dam, "aana")
+  const landAreaAana = convertToAana(
+    property.landArea.ropani,
+    property.landArea.aana,
+    property.landArea.paisa,
+    property.landArea.dam,
+    "aana",
+  );
   return {
     propertyId: property.propertyId,
     ownerDetails: property.ownerDetails,
-    landArea:{
+    landArea: {
       ropani: property.landArea.ropani,
       aana: property.landArea.aana,
       paisa: property.landArea.paisa,
       dam: property.landArea.dam,
     },
     landAreaAana: landAreaAana,
+    nearestRoad: property.nearestRoad,
+    nearestRoadImage: property.nearestRoadImage,
+    nearestLandMark: property.nearestLandMark,
     valuatorDetail: {
       valuatorName: "Nepal Property Valuation",
     },
+
     valuationMethod: {
       land: "Weighted Average Method",
       building: "Cost Approach with Straight-Line Depreciation",

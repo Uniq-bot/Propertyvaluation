@@ -15,6 +15,8 @@ export interface Location {
   district: string;
   municipality: string;
   ward: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface Building {
@@ -28,16 +30,26 @@ export interface Building {
 
 export interface PropertyInput {
   propertyId: string;
+  plotNumber: string;
+  possibleFutureInhanceMents: string;
   ownerDetails: OwnerDetail;
+  clientDetails: ClientDetail;
   location: Location;
-
-  landArea:{
+  boundaryDetails: {
+    east: string;
+    west: string;
+    north: string;
+    south: string;
+  };
+  nearestRoad: string;
+  nearestRoadImage: File;
+  nearestLandMark: string;
+  landArea: {
     ropani: number;
     aana: number;
     paisa: number;
     dam: number;
-  }
-
+  };
   governmentRate: number;
   marketRate: number;
   adoptedLandRate?: number;
@@ -54,11 +66,7 @@ export interface PropertyInput {
     observedValue: string;
     adjustment: number;
   }[];
-  images?: {
-    name: string;
-    file: File;
-    type: string;
-  }[];
+  images?: PropertyImage[];
 }
 
 // ── Valuation result ────────────────────────
@@ -119,13 +127,17 @@ export interface BuildingResult {
 export interface ValuationResult {
   propertyId: string;
   ownerDetails: OwnerDetail;
-  landArea:{
+  landArea: {
     ropani: number;
     aana: number;
     paisa: number;
     dam: number;
-  }
+  };
+  
   landAreaAana: number;
+  nearestRoad: string;
+  nearestRoadImage?: File;
+  nearestLandMark: string;
   structuralAmenities?: {
     factor: string;
     observedValue: string;
@@ -149,17 +161,19 @@ export interface ValuationResult {
     electricalRate: number;
     depreciationMethod: string;
   };
-  images?: {
-    name: string;
-    file: File;
-    type: string;
-  }[];
+  images?: PropertyImage[];
 }
 
 export interface OwnerDetail {
   ownerName: string;
   ownerNumber: number;
   ownerLocation: string;
+}
+
+export interface ClientDetail {
+  clientName: string;
+  clientAddress: string;
+  ContactNumber: number;
 }
 
 export type PropertyImageType = "satellite" | "trace" | "physical";

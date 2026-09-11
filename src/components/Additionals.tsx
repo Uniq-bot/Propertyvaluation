@@ -125,7 +125,7 @@ export function MoneyFieldInline({ value, placeholder, onChange }: MoneyFieldInl
         value={value === 0 ? "" : value}
         placeholder={placeholder ?? "0"}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full min-w-[160px] rounded border bg-white py-2.5 pl-10 pr-3 text-right text-base outline-none transition"
+        className="w-full min-w-40 rounded border bg-white py-2.5 pl-10 pr-3 text-right text-base outline-none transition"
         style={{ borderColor: BORDER, color: TEXT }}
         onFocus={(e) => (e.currentTarget.style.borderColor = GOLD)}
         onBlur={(e) => (e.currentTarget.style.borderColor = BORDER)}
@@ -178,7 +178,7 @@ export function SummaryAmount({
       <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: MUTED }}>
         {label}
       </p>
-      <p className="mt-1 break-words text-base font-bold" style={{ color: TEXT }}>
+      <p className="mt-1 wrap-break-word text-base font-bold" style={{ color: TEXT }}>
         {value}
       </p>
     </div>
@@ -320,7 +320,7 @@ export function FinalValue({
         {label}
       </p>
       <p
-        className={`mt-2 break-words ${primary ? "text-xl font-bold" : "text-base font-bold"}`}
+        className={`mt-2 wrap-break-word ${primary ? "text-xl font-bold" : "text-base font-bold"}`}
         style={{ color: primary ? CHARCOAL : TEXT }}
       >
         {value}
