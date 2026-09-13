@@ -81,6 +81,7 @@ const emptyProperty: PropertyInput = {
     district: "",
     municipality: "",
     ward: 1,
+    tole: "",
     latitude: 0,
     longitude: 0,
   },
@@ -101,8 +102,8 @@ const emptyProperty: PropertyInput = {
   },
   governmentRate: 0,
   marketRate: 0,
-  governmentWeight: 30,
-  marketWeight: 70,
+  governmentWeight: 0.3,
+  marketWeight: 0.7,
   buildingAge: 0,
   hasBuilding: true,
   structuralAmenities: [],
@@ -229,7 +230,8 @@ export default function PropertyValuationPage() {
     (Array.isArray(buildingFloors) &&
       buildingFloors.length > 0 &&
       buildingFloors.every(
-        (f) => f && Number(f.area) > 0 && String(f.name ?? "").trim().length > 0,
+        (f) =>
+          f && Number(f.area) > 0 && String(f.name ?? "").trim().length > 0,
       ));
 
   // Navigation
@@ -327,9 +329,8 @@ export default function PropertyValuationPage() {
   const upDateImageToProperty = (nextImages: PropertyImage[]) => {
     setProperty((prev) => ({
       ...prev,
-      images: [...(prev.images ?? []), ...nextImages],
+      images: nextImages,
     }));
-
     advance(5);
   };
 
@@ -762,6 +763,21 @@ export default function PropertyValuationPage() {
                       )}
                     </select>
                   </div>
+                  <div>
+                    <label
+                      className="block text-[11px] sm:text-xs font-semibold uppercase tracking-wide"
+                      style={{ color: MUTED }}
+                    >
+                      Location Name (Tole)
+                    </label>
+                    <input
+                      value={property.location.tole || ""}
+                      placeholder="e.g. Boudha"
+                      onChange={(e) => updateLocation("tole", e.target.value)}
+                      className="mt-1.5 w-full rounded border bg-white px-3 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 disabled:bg-[#f7f3ea] disabled:text-[#94a3b8]"
+                      style={{ borderColor: BORDER }}
+                    />
+                  </div>
 
                   <NumberField
                     label="Latitude"
@@ -777,18 +793,18 @@ export default function PropertyValuationPage() {
                   />
 
                   <Field
-                    label="Nearest Road"
-                    value={property.nearestRoad}
-                    placeholder="e.g. Ring Road"
-                    onChange={(value) => updateProperty("nearestRoad", value)}
-                  />
-                  <Field
                     label="Nearest Landmark"
                     value={property.nearestLandMark}
                     placeholder="e.g. Boudhanath Stupa"
                     onChange={(value) =>
                       updateProperty("nearestLandMark", value)
                     }
+                  />
+                  <Field
+                    label="Nearest Road"
+                    value={property.nearestRoad}
+                    placeholder="e.g. Ring Road"
+                    onChange={(value) => updateProperty("nearestRoad", value)}
                   />
                 </div>
                 <div
@@ -1149,7 +1165,7 @@ export default function PropertyValuationPage() {
                           <tbody>
                             {factorsField.map((factor, index) => {
                               const selectedFactor = PROPERTY_FACTORS.find(
-                                (item) => item.value === factor.factor,
+                                (item) => item.label === factor.factor,
                               );
 
                               return (
@@ -1179,7 +1195,7 @@ export default function PropertyValuationPage() {
                                       {PROPERTY_FACTORS.map((item) => (
                                         <option
                                           key={item.value}
-                                          value={item.value}
+                                          value={item.label}
                                         >
                                           {item.label}
                                         </option>

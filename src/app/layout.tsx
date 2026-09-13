@@ -3,7 +3,7 @@ import "./globals.css";
 import { PropertyProvider } from "../../public/context/PropertyContext";
 
 export const metadata: Metadata = {
-  title: "Nepal Property Valuation System",
+  title: "Babbal",
   description:
     "Land and building valuation for Bagmati Province using government and market rates, straight-line depreciation, and a 10-year inflation forecast.",
 };
