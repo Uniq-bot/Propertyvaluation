@@ -15,7 +15,7 @@ export interface Location {
   district: string;
   municipality: string;
   ward: number;
-  tole: string;
+  tole?: string;
   latitude: number;
   longitude: number;
 }
